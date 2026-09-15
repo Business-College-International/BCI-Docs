@@ -8,7 +8,7 @@
 `bci-docs` is the canonical engineering source of truth for architecture, domain model, security boundaries, financial invariants, state machines, API contracts, roadmap and release criteria.
 
 ### Backend
-`bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, admissions, academic-structure, student lifecycle, finance, attendance, and assessment modules.
+`bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, admissions, academic-structure, student lifecycle, finance, attendance, assessments, and derived academic-report modules.
 
 Authorization has a canonical permission catalog plus `RolePermission` for default capabilities and `UserPermission` for explicit exceptions. The permission guard resolves both role defaults and direct grants.
 
@@ -66,17 +66,22 @@ Guardians receive the `attendance.read` role capability, but `canViewAcademic` o
 
 Focused attendance tests cover teacher assignment denial, out-of-class student rejection, guardian academic-visibility denial, and privileged access.
 
-### Assessments foundation
+### Assessments and reporting foundation
 
-Assessments are now implemented without database changes:
+Assessments are implemented without database changes:
 
 - `POST /api/v1/assessments`
 - `POST /api/v1/assessments/:assessmentId/results`
 - `GET /api/v1/assessments/students/:studentId?termId=...`
+- `GET /api/v1/academic-reports/students/:studentId/terms/:termId`
 
-Assessment creation requires assignment to the subject/term for teachers and is limited to open terms. Result entry verifies assignment scope, active student enrolment in a class assigned for that subject/term, duplicate-student rejection, and score <= maxScore. Result updates are upserts and audited.
+Assessment creation requires teacher assignment to the subject/term and is limited to open terms. Result entry verifies assignment scope, active student enrolment in a class assigned for that subject/term, duplicate-student rejection, and score <= maxScore. Result updates are upserts and audited.
 
-Students/guardians with the appropriate academic relationship can read assessment results; guardian access still obeys `canViewAcademic`. Teachers are limited to students within their active assigned class/term. Focused tests cover teacher authorization, student scope, and score bounds.
+The academic-report endpoint is read-only and derives assessment percentages, subject averages, and an overall percentage when the term uses a consistent weighting policy. Fully weighted terms use weighted contribution; fully unweighted terms use an average percentage. Mixed weighted/unweighted results deliberately return `MIXED_POLICY_REQUIRED` rather than silently choosing an interpretation.
+
+The system does not yet assign official grades. Grade bands/cutoffs are intentionally not hard-coded; a configurable school grading policy must be established before report cards can publish grades.
+
+Guardians now receive `assessments.read`, but report access still requires `canViewAcademic` on the specific guardian-student relationship. Teachers are scoped to the student's active class/term assignment. Focused report tests cover weighted calculation and guardian denial.
 
 ### Runtime/security foundation
 
@@ -118,10 +123,11 @@ Attendance:
 - `POST /api/v1/attendance/sessions/:sessionId/records`
 - `GET /api/v1/attendance/students/:studentId?termId=...`
 
-Assessments:
+Assessments/reports:
 - `POST /api/v1/assessments`
 - `POST /api/v1/assessments/:assessmentId/results`
 - `GET /api/v1/assessments/students/:studentId?termId=...`
+- `GET /api/v1/academic-reports/students/:studentId/terms/:termId`
 
 The Prisma model uses a dedicated application tracking code rather than exposing application UUIDs as public lookup credentials. Provider payment attempts and webhook events have durable models for future reconciliation.
 
@@ -158,16 +164,16 @@ There are currently no open pull requests or open issues in the BCI organization
 6. Verify the live Moolre API contract before implementing provider adapters and reconciliation workers.
 7. Build successful payment allocation, receipts, refunds, immutable journal posting, and reconciliation before finance goes live.
 8. Expand attendance roster/teacher/mobile UX and reporting.
-9. Build report-card/grading rules, staff/payroll, wallet, inventory, messaging, and notification workflows.
-10. Establish deployment, secrets, backups, restore drills, and production monitoring.
+9. Establish configurable grading rules and full report-card publication workflows.
+10. Build staff/payroll, wallet, inventory, messaging, notification, deployment, secrets, backups, restore drills, and production monitoring.
 
 ## Current next execution order
 
 1. Prisma migration + database verification.
-2. Complete web/mobile academic parity for attendance and assessments.
+2. Complete web/mobile academic parity for attendance, assessments, and academic reports.
 3. Finalize payment reservation schema and reconciliation design.
 4. Finance payment/receipt foundation after schema verification.
-5. Report cards/grading and academic reporting.
+5. Configurable grading/report-card policy.
 6. Staff/payroll.
 7. Wallet/inventory.
 8. Communication/notifications.
