@@ -8,9 +8,9 @@
 `bci-docs` is the canonical engineering source of truth for architecture, domain model, security boundaries, financial invariants, state machines, API contracts, roadmap and release criteria.
 
 ### Backend
-`bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, admissions, academic-structure, student lifecycle, finance, attendance, assessments, and derived academic-report modules.
+`bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, admissions, academic-structure, student lifecycle, finance, attendance, assessments, derived academic-report, and staff-operation modules.
 
-Authorization has a canonical permission catalog plus `RolePermission` for default capabilities and `UserPermission` for explicit exceptions. The permission guard resolves both role defaults and direct grants.
+Authorization has a canonical permission catalog plus `RolePermission` for default capabilities and `UserPermission` for explicit exceptions. The permission guard resolves both role defaults and direct grants. Staff now have explicit `staff.read` and `staff.manage` permissions rather than overloading `users.manage`.
 
 `GET /api/v1/auth/me` returns the server-authoritative current-user profile, roles, effective permissions, direct scoped grants, and linked guardian/staff profile where applicable.
 
@@ -27,6 +27,18 @@ A controlled withdrawal transition uses `students.manage`, closes the active enr
 Guardian self-profile endpoints allow updates to non-login profile fields and notification preferences. Phone/email login identifiers remain read-only until a verified change flow exists.
 
 Academic endpoints use explicit `academics.read` / `academics.manage` permissions. Teachers receive only assigned classes; privileged academic roles can browse broader class structure.
+
+### Staff/teacher operations
+
+The staff module now provides:
+
+- `GET /api/v1/staff/me` for an authenticated staff member's profile, active duties, and teaching assignments.
+- `GET /api/v1/staff/directory` for authorized internal staff directory access.
+- `GET /api/v1/staff/:staffPersonId/assignments` for appropriately scoped assignment reads.
+- `POST /api/v1/staff/:staffPersonId/duties` for staff-duty assignment.
+- `POST /api/v1/staff/:staffPersonId/teacher-assignments` for class/subject/term assignment.
+
+Teacher-assignment creation validates the class and term share the same academic year, the subject level matches the class level, SHS programme compatibility, open-term status, duplicate assignment protection, and writes an audit record. Focused tests cover academic-year mismatch.
 
 ### Finance foundation
 
@@ -114,6 +126,13 @@ Student/guardian:
 - `DELETE /api/v1/students/:id/guardians/:guardianId`
 - `POST /api/v1/students/:id/withdraw`
 
+Staff:
+- `GET /api/v1/staff/me`
+- `GET /api/v1/staff/directory`
+- `GET /api/v1/staff/:staffPersonId/assignments`
+- `POST /api/v1/staff/:staffPersonId/duties`
+- `POST /api/v1/staff/:staffPersonId/teacher-assignments`
+
 Finance:
 - `GET /api/v1/finance/fee-schedules?termId=...`
 - `POST /api/v1/finance/fee-schedules`
@@ -171,16 +190,17 @@ There are currently no open pull requests or open issues in the BCI organization
 7. Build successful payment allocation, receipts, refunds, immutable journal posting, and reconciliation before finance goes live.
 8. Expand attendance roster/teacher/mobile UX and reporting.
 9. Establish configurable grading rules and full report-card publication workflows.
-10. Build staff/payroll, wallet, inventory, messaging, notification, deployment, secrets, backups, restore drills, and production monitoring.
+10. Build payroll, wallet, inventory, messaging, notification, deployment, secrets, backups, restore drills, and production monitoring.
 
 ## Current next execution order
 
 1. Prisma migration + database verification.
 2. Complete web/mobile academic parity for attendance, assessments, and academic reports.
-3. Finalize payment reservation schema and reconciliation design.
-4. Finance payment/receipt foundation after schema verification.
-5. Configurable grading/report-card policy.
-6. Staff/payroll.
-7. Wallet/inventory.
-8. Communication/notifications.
-9. Reporting and production hardening.
+3. Build staff web/mobile operational views against the staff module.
+4. Finalize payment reservation schema and reconciliation design.
+5. Finance payment/receipt foundation after schema verification.
+6. Configurable grading/report-card policy.
+7. Payroll.
+8. Wallet/inventory.
+9. Communication/notifications.
+10. Reporting and production hardening.
