@@ -30,7 +30,7 @@ Academic endpoints use explicit `academics.read` / `academics.manage` permission
 
 ### Staff/teacher operations
 
-The staff module now provides:
+The staff module provides:
 
 - `GET /api/v1/staff/me` for an authenticated staff member's profile, active duties, and teaching assignments.
 - `GET /api/v1/staff/directory` for authorized internal staff directory access.
@@ -46,7 +46,7 @@ A timetable database entity does not yet exist in the restored Prisma schema. `T
 
 ### Payroll read foundation
 
-The backend now exposes read-only payroll information:
+The backend exposes read-only payroll information:
 
 - `GET /api/v1/payroll/me` for the authenticated staff member's current salary structure, payroll entries, and disbursement status history.
 - `GET /api/v1/payroll/periods` for authorized director/principal/accountant payroll-period summaries.
@@ -67,9 +67,11 @@ Invoices are issued transactionally from active fee schedules that match the stu
 
 Guardians can read invoices only when their guardian-student link has `canPayFees=true`. Finance staff use server-side finance permissions.
 
-Payment-intent creation is intentionally **not** exposed yet. The current schema needs an explicit invoice-target/reservation relationship so concurrent pending payment attempts cannot over-commit an invoice balance. This gate is documented in `PAYMENT_INTENT_DESIGN.md`.
+Payment-intent creation is intentionally **not** exposed yet. `PAYMENT_INTENT_DESIGN.md` now defines the required reservation, expiry, idempotency, concurrency, callback, allocation and receipt invariants. The preferred design is a dedicated payment-intent/reservation record linked to the target invoice and eventual financial payment.
 
-Moolre adapter/callback code has not been introduced. Provider behavior must be verified before integration is implemented.
+Moolre adapter/callback code has not been introduced. Provider behavior must be verified before integration is implemented. The live contract is not being guessed from static assumptions.
+
+The Flutter guardian app now exposes a read-only fee view for wards whose relationship has `canPayFees=true`. It shows server-derived invoice totals, allocated amounts, outstanding balance, due date and invoice lines. It deliberately has no payment button until the reservation/provider flow is production-safe.
 
 ### Attendance foundation
 
@@ -90,8 +92,6 @@ Attendance records can only be written for students with active enrolments in th
 
 Guardians receive the `attendance.read` role capability, but `canViewAcademic` on the specific guardian-student link still controls whether that guardian can see a ward's attendance. Teachers can read attendance for students in their assigned active class/term; privileged school roles can read broader records.
 
-Focused attendance tests cover teacher assignment denial, out-of-class student rejection, guardian academic-visibility denial, and privileged access.
-
 ### Assessments and reporting foundation
 
 Assessments are implemented without database changes:
@@ -110,7 +110,9 @@ The current-term endpoint resolves the open term inside the current academic yea
 
 The system does not yet assign official grades. Grade bands/cutoffs are intentionally not hard-coded; a configurable school grading policy must be established before report cards can publish grades.
 
-Guardians have `assessments.read`, but report access still requires `canViewAcademic` on the specific guardian-student relationship. Teachers are scoped to the student's active class/term assignment. Focused report tests cover weighted calculation and guardian denial.
+Guardians have `assessments.read`, but report access still requires `canViewAcademic` on the specific guardian-student relationship. Teachers are scoped to the student's active class/term assignment.
+
+The Flutter guardian app displays current-term academic results using the same server-derived report contract and does not calculate or invent grades locally.
 
 ### Runtime/security foundation
 
@@ -179,9 +181,7 @@ The Prisma model uses a dedicated application tracking code rather than exposing
 The portal uses server-returned permission codes. The staff workspace only loads for accounts with `staff.read` and is sourced from `GET /api/v1/staff/me`.
 
 ### Mobile
-`bci-mobile-app` has a Flutter/Riverpod shell, secure token storage, shared auth login/refresh/logout, session restoration through `/auth/me`, an authenticated guardian dashboard loading `/students/me/wards`, and a read-only current-term academic-results page for wards whose relationship has `canViewAcademic=true`.
-
-The academic page displays server-derived percentages, subject averages, assessment results, and the current grading-policy status; it does not invent grades locally.
+`bci-mobile-app` has a Flutter/Riverpod shell, secure token storage, shared auth login/refresh/logout, session restoration through `/auth/me`, an authenticated guardian dashboard loading `/students/me/wards`, a read-only current-term academic-results page for wards whose relationship has `canViewAcademic=true`, and a read-only fee/invoice page for wards whose relationship has `canPayFees=true`.
 
 ### Public website
 `bci-website` has a public BCI shell and admissions form concept wired to the shared backend application endpoint and authoritative tracking-code response.
@@ -219,7 +219,7 @@ There are currently no open pull requests or open issues in the BCI organization
 2. Complete web/mobile academic parity for attendance, assessments, and academic reports.
 3. Build remaining staff web/mobile operational workflows.
 4. Finalize payment reservation schema and reconciliation design.
-5. Finance payment/receipt foundation after schema verification.
+5. Finance payment/receipt foundation after schema verification and provider-contract verification.
 6. Configurable grading/report-card policy.
 7. Payroll approval/disbursement.
 8. Wallet/inventory.
