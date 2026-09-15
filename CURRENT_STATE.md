@@ -32,6 +32,12 @@ A deterministic Prisma seed establishes role-permission defaults without creatin
 
 Every HTTP response receives a server-generated `X-Request-Id` correlation identifier.
 
+Startup now validates `DATABASE_URL`, `JWT_ACCESS_SECRET`, `NODE_ENV` and `PORT` before the application listens. JWT access secrets must meet a minimum length requirement.
+
+HTTP requests now emit structured JSON timing/status logs containing the request correlation ID, method, path, status and duration.
+
+A conservative dependency-free in-process request limiter protects authentication and public application endpoints during foundation work. Distributed rate limiting remains a production infrastructure requirement before horizontal scaling.
+
 The Prisma schema baseline was restored from the last complete Git blob after a reviewed schema-edit attempt was found to have truncated the file. Finance, payment-provider, wallet, inventory, notification and audit models are confirmed present again. No migration was generated from the truncated version.
 
 ### Public/authenticated backend endpoints
@@ -92,7 +98,7 @@ There are currently no open pull requests or open issues in the BCI organization
 
 1. Generate and verify the initial Prisma migration from the complete hardened schema and establish a repeatable PostgreSQL verification path.
 2. Complete remaining object/scope authorization across attendance, assessments, finance, inventory, messaging and staff workflows.
-3. Add structured logging, rate limiting and centralized environment/secret validation.
+3. Replace the bootstrap in-process rate limiter with distributed protection before running multiple API instances.
 4. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model before implementation; the current `Enrolment` uniqueness model has intentionally not been weakened yet.
 5. Verify the live Moolre API contract before implementing provider adapters and reconciliation workers.
 6. Build fee charges, payment intents, reconciliation, receipts and immutable journal posting before finance goes live.
