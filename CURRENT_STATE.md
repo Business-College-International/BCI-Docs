@@ -10,6 +10,12 @@ The docs repository is the canonical engineering source of truth for architectur
 ### Backend
 `bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, admissions and academic-structure modules.
 
+The backend now also has a reusable server-side permission-code decorator/guard backed by `UserPermission`, while existing role checks remain transitional until permission provisioning and object/scope authorization are complete.
+
+Every HTTP response receives a server-generated `X-Request-Id` correlation identifier.
+
+Internal academic-structure reads are authenticated; academic years and class streams are no longer public endpoints.
+
 Current public admissions endpoints:
 
 - `POST /api/v1/applications`
@@ -40,11 +46,13 @@ GitHub Issues are not being used as the default implementation journal during fo
 
 Backend CI runs on pull requests or intentional manual dispatch only. Direct pushes to `main` do not trigger CI, preventing noisy failure notifications while the repository is still being bootstrapped.
 
+There are currently no open pull requests or open issues in the BCI organization.
+
 ## Open blockers before production
 
 1. Generate and verify the initial Prisma migration from the hardened schema and establish a repeatable PostgreSQL verification path.
-2. Replace coarse role checks with complete permission + object/scope authorization.
-3. Add request correlation IDs, structured logging, rate limiting and centralized environment/secret validation.
+2. Complete permission provisioning plus object/scope authorization; role checks are still transitional.
+3. Add structured logging, rate limiting and centralized environment/secret validation.
 4. Add guardian/student profile APIs and complete the student lifecycle.
 5. Verify the live Moolre API contract before implementing provider adapters and reconciliation workers.
 6. Build fee charges, payment intents, reconciliation, receipts and immutable journal posting before finance goes live.
@@ -55,7 +63,7 @@ Backend CI runs on pull requests or intentional manual dispatch only. Direct pus
 ## Current next execution order
 
 1. Prisma migration + database verification.
-2. Permission/scoping hardening.
+2. Permission provisioning and object/scope authorization.
 3. Guardian/student identity linking and student lifecycle.
 4. Complete admissions admission/enrolment UI using academic-year/term/class APIs.
 5. Finance/payment foundation.
