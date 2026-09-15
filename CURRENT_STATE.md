@@ -73,15 +73,18 @@ Assessments are implemented without database changes:
 - `POST /api/v1/assessments`
 - `POST /api/v1/assessments/:assessmentId/results`
 - `GET /api/v1/assessments/students/:studentId?termId=...`
+- `GET /api/v1/academic-reports/students/:studentId/current`
 - `GET /api/v1/academic-reports/students/:studentId/terms/:termId`
 
 Assessment creation requires teacher assignment to the subject/term and is limited to open terms. Result entry verifies assignment scope, active student enrolment in a class assigned for that subject/term, duplicate-student rejection, and score <= maxScore. Result updates are upserts and audited.
 
-The academic-report endpoint is read-only and derives assessment percentages, subject averages, and an overall percentage when the term uses a consistent weighting policy. Fully weighted terms use weighted contribution; fully unweighted terms use an average percentage. Mixed weighted/unweighted results deliberately return `MIXED_POLICY_REQUIRED` rather than silently choosing an interpretation.
+The academic-report endpoints are read-only and derive assessment percentages, subject averages, and an overall percentage when the term uses a consistent weighting policy. Fully weighted terms use weighted contribution; fully unweighted terms use an average percentage. Mixed weighted/unweighted results deliberately return `MIXED_POLICY_REQUIRED` rather than silently choosing an interpretation.
+
+The current-term endpoint resolves the open term inside the current academic year on the server, so guardians do not need administrative term IDs.
 
 The system does not yet assign official grades. Grade bands/cutoffs are intentionally not hard-coded; a configurable school grading policy must be established before report cards can publish grades.
 
-Guardians now receive `assessments.read`, but report access still requires `canViewAcademic` on the specific guardian-student relationship. Teachers are scoped to the student's active class/term assignment. Focused report tests cover weighted calculation and guardian denial.
+Guardians have `assessments.read`, but report access still requires `canViewAcademic` on the specific guardian-student relationship. Teachers are scoped to the student's active class/term assignment. Focused report tests cover weighted calculation and guardian denial.
 
 ### Runtime/security foundation
 
@@ -127,6 +130,7 @@ Assessments/reports:
 - `POST /api/v1/assessments`
 - `POST /api/v1/assessments/:assessmentId/results`
 - `GET /api/v1/assessments/students/:studentId?termId=...`
+- `GET /api/v1/academic-reports/students/:studentId/current`
 - `GET /api/v1/academic-reports/students/:studentId/terms/:termId`
 
 The Prisma model uses a dedicated application tracking code rather than exposing application UUIDs as public lookup credentials. Provider payment attempts and webhook events have durable models for future reconciliation.
@@ -137,7 +141,9 @@ The Prisma model uses a dedicated application tracking code rather than exposing
 The portal verifies the access token through `/auth/me`, uses server-returned permissions, and loads authoritative academic placement options from the backend.
 
 ### Mobile
-`bci-mobile-app` has a Flutter/Riverpod shell, secure token storage, shared auth login/refresh/logout, session restoration through `/auth/me`, and an authenticated guardian dashboard loading `/students/me/wards`. Guardian relationship permissions are surfaced per ward.
+`bci-mobile-app` has a Flutter/Riverpod shell, secure token storage, shared auth login/refresh/logout, session restoration through `/auth/me`, an authenticated guardian dashboard loading `/students/me/wards`, and a read-only current-term academic-results page for wards whose relationship has `canViewAcademic=true`.
+
+The academic page displays server-derived percentages, subject averages, assessment results, and the current grading-policy status; it does not invent grades locally.
 
 ### Public website
 `bci-website` has a public BCI shell and admissions form concept wired to the shared backend application endpoint and authoritative tracking-code response.
