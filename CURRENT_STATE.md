@@ -8,7 +8,7 @@
 `bci-docs` is the canonical engineering source of truth for architecture, domain model, security boundaries, financial invariants, state machines, API contracts, roadmap and release criteria.
 
 ### Backend
-`bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, admissions, academic-structure, student lifecycle, finance, attendance, assessments, derived academic-report, and staff-operation modules.
+`bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, admissions, academic-structure, student lifecycle, finance, attendance, assessments, derived academic-report, staff-operation, and read-only payroll modules.
 
 Authorization has a canonical permission catalog plus `RolePermission` for default capabilities and `UserPermission` for explicit exceptions. The permission guard resolves both role defaults and direct grants. Staff now have explicit `staff.read` and `staff.manage` permissions rather than overloading `users.manage`.
 
@@ -39,6 +39,20 @@ The staff module now provides:
 - `POST /api/v1/staff/:staffPersonId/teacher-assignments` for class/subject/term assignment.
 
 Teacher-assignment creation validates the class and term share the same academic year, the subject level matches the class level, SHS programme compatibility, open-term status, duplicate assignment protection, and writes an audit record. Focused tests cover academic-year mismatch.
+
+The staff web workspace displays the authenticated employee's duties and teaching assignments from the authoritative backend.
+
+A timetable database entity does not yet exist in the restored Prisma schema. `TIMETABLE_DESIGN.md` defines the proposed timetable/version/period model and conflict invariants as an explicit schema gate rather than improvising timetable columns on teacher assignments.
+
+### Payroll read foundation
+
+The backend now exposes read-only payroll information:
+
+- `GET /api/v1/payroll/me` for the authenticated staff member's current salary structure, payroll entries, and disbursement status history.
+- `GET /api/v1/payroll/periods` for authorized director/principal/accountant payroll-period summaries.
+- `GET /api/v1/payroll/periods/:periodId/entries` for authorized payroll-period entry detail.
+
+Payroll writes, salary changes, approvals, and staff disbursements are deliberately not exposed through these endpoints. No provider transfer is initiated by the payroll module.
 
 ### Finance foundation
 
@@ -106,7 +120,7 @@ Every HTTP response receives a server-generated `X-Request-Id` correlation ident
 
 Startup validates `DATABASE_URL`, `JWT_ACCESS_SECRET`, `NODE_ENV`, `PORT`, and production `CORS_ORIGINS` before listening. HTTP requests emit structured timing/status logs. A dependency-free in-process limiter protects authentication and public application endpoints; distributed rate limiting remains a production gate before horizontal scaling.
 
-The Prisma schema baseline was restored from the last complete Git blob after a reviewed schema-edit attempt was found to have truncated the file. Finance, payment-provider, wallet, inventory, notification, audit, attendance, and assessment models are confirmed present again. No migration was generated from the truncated version.
+The Prisma schema baseline was restored from the last complete Git blob after a reviewed schema-edit attempt was found to have truncated the file. Finance, payment-provider, wallet, inventory, notification, audit, attendance, assessment, staff, and payroll models are confirmed present again. No migration was generated from the truncated version.
 
 ### Public/authenticated backend endpoints
 
@@ -132,6 +146,11 @@ Staff:
 - `GET /api/v1/staff/:staffPersonId/assignments`
 - `POST /api/v1/staff/:staffPersonId/duties`
 - `POST /api/v1/staff/:staffPersonId/teacher-assignments`
+
+Payroll:
+- `GET /api/v1/payroll/me`
+- `GET /api/v1/payroll/periods`
+- `GET /api/v1/payroll/periods/:periodId/entries`
 
 Finance:
 - `GET /api/v1/finance/fee-schedules?termId=...`
@@ -182,7 +201,7 @@ There are currently no open pull requests or open issues in the BCI organization
 ## Open blockers before production
 
 1. Generate and verify the initial Prisma migration from the complete hardened schema and establish a repeatable PostgreSQL verification path.
-2. Complete remaining object/scope authorization across finance, inventory, messaging, staff, and remaining academic workflows.
+2. Complete remaining object/scope authorization across finance, inventory, messaging, staff, payroll, and remaining academic workflows.
 3. Replace the bootstrap in-process rate limiter with distributed protection before running multiple API instances.
 4. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model; the current `Enrolment` uniqueness model has intentionally not been weakened.
 5. Finalize the payment-intent invoice-target/reservation schema and only then expose payment creation.
@@ -190,7 +209,9 @@ There are currently no open pull requests or open issues in the BCI organization
 7. Build successful payment allocation, receipts, refunds, immutable journal posting, and reconciliation before finance goes live.
 8. Expand attendance roster/teacher/mobile UX and reporting.
 9. Establish configurable grading rules and full report-card publication workflows.
-10. Build payroll, wallet, inventory, messaging, notification, deployment, secrets, backups, restore drills, and production monitoring.
+10. Establish timetable schema/versioning and conflict validation.
+11. Build payroll write/approval/disbursement workflows only after financial verification.
+12. Build wallet, inventory, messaging, notification, deployment, secrets, backups, restore drills, and production monitoring.
 
 ## Current next execution order
 
@@ -200,7 +221,7 @@ There are currently no open pull requests or open issues in the BCI organization
 4. Finalize payment reservation schema and reconciliation design.
 5. Finance payment/receipt foundation after schema verification.
 6. Configurable grading/report-card policy.
-7. Payroll.
+7. Payroll approval/disbursement.
 8. Wallet/inventory.
 9. Communication/notifications.
 10. Reporting and production hardening.
