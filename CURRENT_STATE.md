@@ -8,17 +8,21 @@
 `bci-docs` is the canonical engineering source of truth for architecture, domain model, security boundaries, financial invariants, state machines, API contracts, roadmap and release criteria.
 
 ### Backend
-`bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, admissions, academic-structure and student-read modules.
+`bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, admissions, academic-structure and student lifecycle modules.
 
 Authorization has a canonical permission catalog plus `RolePermission` for default capabilities and `UserPermission` for explicit exceptions. The permission guard resolves both role defaults and direct grants.
 
 `GET /api/v1/auth/me` returns the server-authoritative current-user profile, roles, effective permissions, direct scoped permission assignments, and linked guardian/staff profile where applicable.
 
-Admissions endpoints now use explicit permission checks for list/review/admit operations rather than coarse role checks.
+Admissions endpoints use explicit permission checks for list/review/admit operations rather than coarse role checks.
 
-Student reads require `students.read` and then apply object scope: linked guardians may read only their wards; privileged office/leadership roles may read broader student records; teachers may read only students belonging to classes and terms covered by their `TeacherAssignment`. Student documents remain staff-only.
+Student reads require `students.read` and then apply object scope: linked guardians may read only their wards; privileged office/leadership roles may read broader student records; teachers may read only students belonging to classes and terms covered by their `TeacherAssignment`. Student documents remain restricted to privileged staff.
 
-Academic endpoints now use explicit `academics.read` / `academics.manage` permissions. Teachers receive only classes covered by their assignments; privileged academic roles can browse the broader class structure.
+A controlled withdrawal transition now uses `students.manage`, closes the active enrolment, marks the student withdrawn, records the reason and writes an audit record atomically. Repeated withdrawal is rejected.
+
+Guardian self-profile endpoints now allow updates to non-login profile fields and notification preferences. Phone/email login identifiers remain read-only until a separate verified change flow exists.
+
+Academic endpoints use explicit `academics.read` / `academics.manage` permissions. Teachers receive only classes covered by their assignments; privileged academic roles can browse the broader class structure.
 
 A deterministic Prisma seed establishes role-permission defaults without creating fake school users or records.
 
@@ -39,6 +43,15 @@ Authenticated student/guardian reads include:
 
 - `GET /api/v1/students/me/wards`
 - `GET /api/v1/students/:id`
+
+Guardian profile endpoints include:
+
+- `GET /api/v1/guardians/me/profile`
+- `PATCH /api/v1/guardians/me/profile`
+
+Student lifecycle includes:
+
+- `POST /api/v1/students/:id/withdraw`
 
 Admission identity linking is hardened: an existing guardian account may be linked by phone, but a non-guardian account cannot be silently attached to a student. Pre-created guardian Person records are reused during later guardian registration instead of duplicated.
 
@@ -70,7 +83,7 @@ There are currently no open pull requests or open issues in the BCI organization
 1. Generate and verify the initial Prisma migration from the hardened schema and establish a repeatable PostgreSQL verification path.
 2. Complete remaining object/scope authorization across attendance, assessments, finance, inventory, messaging and staff workflows.
 3. Add structured logging, rate limiting and centralized environment/secret validation.
-4. Complete guardian/student lifecycle mutations and profile management.
+4. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes, guardian management and transfer/progression workflows.
 5. Verify the live Moolre API contract before implementing provider adapters and reconciliation workers.
 6. Build fee charges, payment intents, reconciliation, receipts and immutable journal posting before finance goes live.
 7. Build attendance, staff/payroll, wallet, inventory, messaging and notification workflows.
