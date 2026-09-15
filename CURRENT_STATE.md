@@ -16,7 +16,7 @@ Authorization has a canonical permission catalog plus `RolePermission` for defau
 
 Admissions endpoints use explicit permission checks for list/review/admit operations rather than coarse role checks.
 
-Admission placement validates that the selected academic year, term and class are mutually consistent, that the term is inside the academic year and open for enrolment, that the class matches the application's level/programme, that a configured class capacity has not been reached, and that an explicit admission number is not already in use.
+Admission placement validates that the selected academic year, term and class are mutually consistent, that the term is inside the academic year and open for enrolment, that the class matches the application's level/programme, that a configured class capacity has not been reached, and that an explicit admission number is not already in use. Focused tests cover the rejected and successful admission paths, including atomic student/guardian/enrolment/decision/audit creation.
 
 Student reads require `students.read` and then apply object scope: linked guardians may read only their wards; privileged office/leadership roles may read broader student records; teachers may read only students belonging to classes and terms covered by their `TeacherAssignment`. Student documents remain restricted to privileged staff.
 
@@ -90,9 +90,11 @@ The portal verifies the access token by calling `/auth/me` before showing the au
 
 GitHub Issues are not being used as the default implementation journal during foundation work. The previous bootstrap/design issues were closed as planning artifacts. Active work is tracked by the canonical docs roadmap and repository commits; issues will only be opened for a bounded, reviewable task when useful.
 
-Backend CI runs on pull requests or intentional manual dispatch only. Direct pushes to `main` do not trigger CI, preventing noisy failure notifications while the repository is still being bootstrapped.
+Backend, web portal, mobile, and public website CI run only on pull requests or intentional manual dispatch. Direct pushes to `main` do not trigger these workflows, preventing noisy failure notifications while the repositories are still being bootstrapped.
 
-CI validates the Prisma schema, generates the Prisma client, compiles the backend and runs the Jest unit suite during those controlled verification runs.
+Backend CI validates the Prisma schema, generates the Prisma client, compiles the backend and runs the Jest unit suite. Web CI builds the portal. Flutter CI runs analysis and tests. Website CI builds the public site.
+
+An organization-wide workflow scan found no remaining `push:` trigger in the BCI repositories.
 
 There are currently no open pull requests or open issues in the BCI organization.
 
@@ -105,7 +107,7 @@ There are currently no open pull requests or open issues in the BCI organization
 5. Verify the live Moolre API contract before implementing provider adapters and reconciliation workers.
 6. Build fee charges, payment intents, reconciliation, receipts and immutable journal posting before finance goes live.
 7. Build attendance, staff/payroll, wallet, inventory, messaging and notification workflows.
-8. Expand integration and cross-repository journey tests, including the new admission placement contract and guardian mobile session.
+8. Expand integration and cross-repository journey tests, including the admission placement contract and guardian mobile session.
 9. Establish deployment, secrets, backups, restore drills and production monitoring.
 
 ## Current next execution order
