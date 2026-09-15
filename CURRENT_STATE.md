@@ -155,9 +155,9 @@ Assessments/reports:
 The Prisma model uses a dedicated application tracking code rather than exposing application UUIDs as public lookup credentials. Provider payment attempts and webhook events have durable models for future reconciliation.
 
 ### Web portal
-`bci-web-portal` has a staff sign-in surface, authenticated admissions workspace, application list/review controls, public tracking-code lookup, and a server-driven admission placement workflow.
+`bci-web-portal` now has the staff sign-in surface, server-authoritative session verification, a staff workspace showing the authenticated employee's active duties/teaching assignments, authenticated admissions workspace, application list/review controls, public tracking-code lookup, and a server-driven admission placement workflow.
 
-The portal verifies the access token through `/auth/me`, uses server-returned permissions, and loads authoritative academic placement options from the backend.
+The portal uses server-returned permission codes. The staff workspace only loads for accounts with `staff.read` and is sourced from `GET /api/v1/staff/me`.
 
 ### Mobile
 `bci-mobile-app` has a Flutter/Riverpod shell, secure token storage, shared auth login/refresh/logout, session restoration through `/auth/me`, an authenticated guardian dashboard loading `/students/me/wards`, and a read-only current-term academic-results page for wards whose relationship has `canViewAcademic=true`.
@@ -196,7 +196,7 @@ There are currently no open pull requests or open issues in the BCI organization
 
 1. Prisma migration + database verification.
 2. Complete web/mobile academic parity for attendance, assessments, and academic reports.
-3. Build staff web/mobile operational views against the staff module.
+3. Build remaining staff web/mobile operational workflows.
 4. Finalize payment reservation schema and reconciliation design.
 5. Finance payment/receipt foundation after schema verification.
 6. Configurable grading/report-card policy.
