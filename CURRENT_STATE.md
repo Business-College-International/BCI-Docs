@@ -128,6 +128,12 @@ Guardians have `assessments.read`, but report access still requires `canViewAcad
 
 The Flutter guardian app displays current-term academic results using the same server-derived report contract and does not calculate or invent grades locally.
 
+### Database verification gate
+
+A dedicated `.github/workflows/database-contract.yml` now runs only on pull requests or deliberate manual dispatch. It starts PostgreSQL 16, validates and generates Prisma, generates the initial SQL from the complete Prisma schema with `prisma migrate diff --from-empty`, applies that SQL to the temporary database, compares the live database back against the schema, then builds/tests the backend and uploads the generated SQL as a seven-day artifact.
+
+This workflow is a verification mechanism, not a production migration claim. The generated SQL has not been marked as the canonical production migration until the workflow actually executes successfully against the complete schema.
+
 ### Runtime/security foundation
 
 A deterministic Prisma seed establishes role-permission defaults without fake school users or records.
@@ -209,7 +215,7 @@ GitHub Issues are not the default implementation journal during foundation work.
 
 Backend, web portal, mobile, and public website CI run only on pull requests or intentional manual dispatch. Direct pushes to `main` do not trigger these workflows.
 
-Backend CI validates Prisma, generates the client, compiles, and runs Jest. Web CI builds the portal. Flutter CI runs analysis/tests. Website CI builds the public site.
+Backend CI validates Prisma, generates the client, compiles, and runs Jest. The dedicated database-contract workflow additionally boots PostgreSQL 16 and checks schema-to-database equivalence. Web CI builds the portal. Flutter CI runs analysis/tests. Website CI builds the public site.
 
 Organization-wide workflow scanning found no remaining `push:` trigger in the BCI repositories.
 
@@ -217,7 +223,7 @@ There are currently no open pull requests or open issues in the BCI organization
 
 ## Open blockers before production
 
-1. Generate and verify the initial Prisma migration from the complete hardened schema and establish a repeatable PostgreSQL verification path.
+1. Execute and review the database-contract workflow successfully, then establish the canonical initial Prisma migration from the verified complete schema.
 2. Complete remaining object/scope authorization across finance, inventory, messaging, staff, payroll, wallet, and remaining academic workflows.
 3. Replace the bootstrap in-process rate limiter with distributed protection before running multiple API instances.
 4. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model; the current `Enrolment` uniqueness model has intentionally not been weakened.
@@ -233,7 +239,7 @@ There are currently no open pull requests or open issues in the BCI organization
 
 ## Current next execution order
 
-1. Prisma migration + database verification.
+1. Execute/review database contract verification and establish the canonical Prisma migration.
 2. Complete web/mobile academic parity for attendance, assessments, and academic reports.
 3. Build remaining staff web/mobile operational workflows.
 4. Finalize payment reservation schema and reconciliation design.
