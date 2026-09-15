@@ -32,7 +32,7 @@ A deterministic Prisma seed establishes role-permission defaults without creatin
 
 Every HTTP response receives a server-generated `X-Request-Id` correlation identifier.
 
-Startup now validates `DATABASE_URL`, `JWT_ACCESS_SECRET`, `NODE_ENV` and `PORT` before the application listens. JWT access secrets must meet a minimum length requirement.
+Startup now validates `DATABASE_URL`, `JWT_ACCESS_SECRET`, `NODE_ENV` and `PORT` before the application listens. JWT access secrets must meet a minimum length requirement. Production also requires explicit `CORS_ORIGINS`; development/test environments use a small local-origin default unless explicitly configured.
 
 HTTP requests now emit structured JSON timing/status logs containing the request correlation ID, method, path, status and duration.
 
