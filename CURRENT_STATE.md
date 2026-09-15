@@ -8,9 +8,9 @@
 `bci-docs` is the canonical engineering source of truth for architecture, domain model, security boundaries, financial invariants, state machines, API contracts, roadmap and release criteria.
 
 ### Backend
-`bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, admissions, academic-structure, student lifecycle, finance, attendance, assessments, derived academic-report, staff-operation, and read-only payroll modules.
+`bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, admissions, academic-structure, student lifecycle, finance, attendance, assessments, derived academic-report, staff-operation, read-only payroll, and read-only wallet modules.
 
-Authorization has a canonical permission catalog plus `RolePermission` for default capabilities and `UserPermission` for explicit exceptions. The permission guard resolves both role defaults and direct grants. Staff now have explicit `staff.read` and `staff.manage` permissions rather than overloading `users.manage`.
+Authorization has a canonical permission catalog plus `RolePermission` for default capabilities and `UserPermission` for explicit exceptions. The permission guard resolves both role defaults and direct grants. Staff now have explicit `staff.read` and `staff.manage` permissions; wallet access has explicit `wallet.read` and `wallet.manage` permission codes.
 
 `GET /api/v1/auth/me` returns the server-authoritative current-user profile, roles, effective permissions, direct scoped grants, and linked guardian/staff profile where applicable.
 
@@ -67,11 +67,25 @@ Invoices are issued transactionally from active fee schedules that match the stu
 
 Guardians can read invoices only when their guardian-student link has `canPayFees=true`. Finance staff use server-side finance permissions.
 
-Payment-intent creation is intentionally **not** exposed yet. `PAYMENT_INTENT_DESIGN.md` now defines the required reservation, expiry, idempotency, concurrency, callback, allocation and receipt invariants. The preferred design is a dedicated payment-intent/reservation record linked to the target invoice and eventual financial payment.
+Payment-intent creation is intentionally **not** exposed yet. `PAYMENT_INTENT_DESIGN.md` defines the required reservation, expiry, idempotency, concurrency, callback, allocation and receipt invariants. The preferred design is a dedicated payment-intent/reservation record linked to the target invoice and eventual financial payment.
 
 Moolre adapter/callback code has not been introduced. Provider behavior must be verified before integration is implemented. The live contract is not being guessed from static assumptions.
 
-The Flutter guardian app now exposes a read-only fee view for wards whose relationship has `canPayFees=true`. It shows server-derived invoice totals, allocated amounts, outstanding balance, due date and invoice lines. It deliberately has no payment button until the reservation/provider flow is production-safe.
+The Flutter guardian app exposes a read-only fee view for wards whose relationship has `canPayFees=true`. It shows server-derived invoice totals, allocated amounts, outstanding balance, due date and invoice lines. It deliberately has no payment button until the reservation/provider flow is production-safe.
+
+### Wallet foundation
+
+The backend exposes a read-only wallet statement endpoint:
+
+- `GET /api/v1/wallets/students/:studentId`
+
+Access requires `wallet.read` and is then constrained by guardian-student `canManageWallet` for guardians. Director/principal/office/accountant roles have broader read access.
+
+The endpoint intentionally does **not** calculate or report an authoritative wallet balance yet. The current `WalletTransaction.REVERSAL` model lacks an original-transaction reference/direction, so deriving a balance from type alone could be financially incorrect. `WALLET_LEDGER_DESIGN.md` defines the required signed-effect, reversal-reference, provider-linkage, concurrency, and office-dispense invariants.
+
+Top-ups, physical withdrawals, reversals, and wallet adjustments are not exposed yet.
+
+The Flutter guardian app now has a read-only wallet statement view for wards whose relationship has `canManageWallet=true`. It shows transaction history and explicitly reports that balance calculation is pending the ledger policy; it does not fabricate a zero balance.
 
 ### Attendance foundation
 
@@ -160,6 +174,9 @@ Finance:
 - `POST /api/v1/finance/invoices`
 - `GET /api/v1/finance/students/:studentId/invoices`
 
+Wallet:
+- `GET /api/v1/wallets/students/:studentId`
+
 Attendance:
 - `POST /api/v1/attendance/sessions`
 - `GET /api/v1/attendance/sessions/:sessionId/roster`
@@ -181,7 +198,7 @@ The Prisma model uses a dedicated application tracking code rather than exposing
 The portal uses server-returned permission codes. The staff workspace only loads for accounts with `staff.read` and is sourced from `GET /api/v1/staff/me`.
 
 ### Mobile
-`bci-mobile-app` has a Flutter/Riverpod shell, secure token storage, shared auth login/refresh/logout, session restoration through `/auth/me`, an authenticated guardian dashboard loading `/students/me/wards`, a read-only current-term academic-results page for wards whose relationship has `canViewAcademic=true`, and a read-only fee/invoice page for wards whose relationship has `canPayFees=true`.
+`bci-mobile-app` has a Flutter/Riverpod shell, secure token storage, shared auth login/refresh/logout, session restoration through `/auth/me`, an authenticated guardian dashboard loading `/students/me/wards`, a read-only current-term academic-results page for wards whose relationship has `canViewAcademic=true`, a read-only fee/invoice page for wards whose relationship has `canPayFees=true`, and a read-only wallet statement page for wards whose relationship has `canManageWallet=true`.
 
 ### Public website
 `bci-website` has a public BCI shell and admissions form concept wired to the shared backend application endpoint and authoritative tracking-code response.
@@ -201,17 +218,18 @@ There are currently no open pull requests or open issues in the BCI organization
 ## Open blockers before production
 
 1. Generate and verify the initial Prisma migration from the complete hardened schema and establish a repeatable PostgreSQL verification path.
-2. Complete remaining object/scope authorization across finance, inventory, messaging, staff, payroll, and remaining academic workflows.
+2. Complete remaining object/scope authorization across finance, inventory, messaging, staff, payroll, wallet, and remaining academic workflows.
 3. Replace the bootstrap in-process rate limiter with distributed protection before running multiple API instances.
 4. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model; the current `Enrolment` uniqueness model has intentionally not been weakened.
 5. Finalize the payment-intent invoice-target/reservation schema and only then expose payment creation.
 6. Verify the live Moolre API contract before implementing provider adapters and reconciliation workers.
 7. Build successful payment allocation, receipts, refunds, immutable journal posting, and reconciliation before finance goes live.
-8. Expand attendance roster/teacher/mobile UX and reporting.
-9. Establish configurable grading rules and full report-card publication workflows.
-10. Establish timetable schema/versioning and conflict validation.
-11. Build payroll write/approval/disbursement workflows only after financial verification.
-12. Build wallet, inventory, messaging, notification, deployment, secrets, backups, restore drills, and production monitoring.
+8. Establish definitive wallet ledger/reversal semantics before calculating or mutating wallet balances.
+9. Expand attendance roster/teacher/mobile UX and reporting.
+10. Establish configurable grading rules and full report-card publication workflows.
+11. Establish timetable schema/versioning and conflict validation.
+12. Build payroll write/approval/disbursement workflows only after financial verification.
+13. Build inventory, messaging, notification, deployment, secrets, backups, restore drills, and production monitoring.
 
 ## Current next execution order
 
@@ -222,6 +240,7 @@ There are currently no open pull requests or open issues in the BCI organization
 5. Finance payment/receipt foundation after schema verification and provider-contract verification.
 6. Configurable grading/report-card policy.
 7. Payroll approval/disbursement.
-8. Wallet/inventory.
-9. Communication/notifications.
-10. Reporting and production hardening.
+8. Wallet ledger schema and controlled top-up/withdrawal workflows.
+9. Inventory.
+10. Communication/notifications.
+11. Reporting and production hardening.
