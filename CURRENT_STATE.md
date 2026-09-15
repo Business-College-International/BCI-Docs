@@ -18,9 +18,13 @@ Admissions endpoints use explicit permission checks for list/review/admit operat
 
 Student reads require `students.read` and then apply object scope: linked guardians may read only their wards; privileged office/leadership roles may read broader student records; teachers may read only students belonging to classes and terms covered by their `TeacherAssignment`. Student documents remain restricted to privileged staff.
 
+Guardian relationship permissions are now enforced: `canViewAcademic` controls academic visibility for guardians, while `canPayFees` and `canManageWallet` are carried as explicit link-level permissions for the finance/wallet layers.
+
+School staff with `students.manage` can create and remove guardian/student links. Linking can designate a single primary contact and set the three guardian link permissions. Link creation/removal is transactional and audited; duplicate links are rejected.
+
 A controlled withdrawal transition now uses `students.manage`, closes the active enrolment, marks the student withdrawn, records the reason and writes an audit record atomically. Repeated withdrawal is rejected.
 
-Guardian self-profile endpoints now allow updates to non-login profile fields and notification preferences. Phone/email login identifiers remain read-only until a separate verified change flow exists.
+Guardian self-profile endpoints allow updates to non-login profile fields and notification preferences. Phone/email login identifiers remain read-only until a separate verified change flow exists.
 
 Academic endpoints use explicit `academics.read` / `academics.manage` permissions. Teachers receive only classes covered by their assignments; privileged academic roles can browse the broader class structure.
 
@@ -51,6 +55,8 @@ Guardian profile endpoints include:
 
 Student lifecycle includes:
 
+- `POST /api/v1/students/:id/guardians`
+- `DELETE /api/v1/students/:id/guardians/:guardianId`
 - `POST /api/v1/students/:id/withdraw`
 
 Admission identity linking is hardened: an existing guardian account may be linked by phone, but a non-guardian account cannot be silently attached to a student. Pre-created guardian Person records are reused during later guardian registration instead of duplicated.
@@ -83,7 +89,7 @@ There are currently no open pull requests or open issues in the BCI organization
 1. Generate and verify the initial Prisma migration from the hardened schema and establish a repeatable PostgreSQL verification path.
 2. Complete remaining object/scope authorization across attendance, assessments, finance, inventory, messaging and staff workflows.
 3. Add structured logging, rate limiting and centralized environment/secret validation.
-4. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes, guardian management and transfer/progression workflows.
+4. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model before implementation.
 5. Verify the live Moolre API contract before implementing provider adapters and reconciliation workers.
 6. Build fee charges, payment intents, reconciliation, receipts and immutable journal posting before finance goes live.
 7. Build attendance, staff/payroll, wallet, inventory, messaging and notification workflows.
