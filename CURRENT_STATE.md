@@ -16,6 +16,8 @@ Authorization has a canonical permission catalog plus `RolePermission` for defau
 
 Admissions endpoints use explicit permission checks for list/review/admit operations rather than coarse role checks.
 
+Admission placement now validates that the selected academic year, term and class are mutually consistent, that the term is inside the academic year and open for enrolment, that the class matches the application's level/programme, and that a configured class capacity has not been reached.
+
 Student reads require `students.read` and then apply object scope: linked guardians may read only their wards; privileged office/leadership roles may read broader student records; teachers may read only students belonging to classes and terms covered by their `TeacherAssignment`. Student documents remain restricted to privileged staff.
 
 Guardian relationship permissions are enforced: `canViewAcademic` controls academic visibility for guardians, while `canPayFees` and `canManageWallet` are carried as explicit link-level permissions for the finance/wallet layers.
@@ -74,9 +76,9 @@ Admission identity linking is hardened: an existing guardian account may be link
 The Prisma model uses a dedicated application tracking code rather than exposing the application UUID as the public lookup credential. Provider payment attempts and webhook events now have durable models for future Moolre reconciliation.
 
 ### Web portal
-`bci-web-portal` has a staff sign-in surface, authenticated admissions workspace, application list/review controls, and public tracking-code lookup aligned to the backend contract.
+`bci-web-portal` has a staff sign-in surface, authenticated admissions workspace, application list/review controls, public tracking-code lookup, and a server-driven admission placement workflow.
 
-The portal verifies the access token by calling `/auth/me` before showing the authenticated workspace. Application list and review controls use server-returned permission codes rather than treating token presence as sufficient authorization.
+The portal verifies the access token by calling `/auth/me` before showing the authenticated workspace. Application list/review/admit controls use server-returned permission codes. Admission placement loads academic years and classes from the backend, filters to open terms and application-matching classes, and sends the selected authoritative IDs back to the admission endpoint for final validation.
 
 ### Mobile
 `bci-mobile-app` has a Flutter/Riverpod shell and an admissions-status screen using the same tracking-code contract as web and backend. Full guardian authentication and authenticated staff experiences remain in progress.
@@ -103,7 +105,7 @@ There are currently no open pull requests or open issues in the BCI organization
 5. Verify the live Moolre API contract before implementing provider adapters and reconciliation workers.
 6. Build fee charges, payment intents, reconciliation, receipts and immutable journal posting before finance goes live.
 7. Build attendance, staff/payroll, wallet, inventory, messaging and notification workflows.
-8. Expand integration and cross-repository journey tests.
+8. Expand integration and cross-repository journey tests, including the new admission placement contract.
 9. Establish deployment, secrets, backups, restore drills and production monitoring.
 
 ## Current next execution order
@@ -111,7 +113,7 @@ There are currently no open pull requests or open issues in the BCI organization
 1. Prisma migration + database verification.
 2. Remaining object/scope authorization.
 3. Guardian/student lifecycle mutations and profile management.
-4. Complete admissions admission/enrolment UI using academic-year/term/class APIs.
+4. Complete admissions journey tests and mobile/web parity.
 5. Finance/payment foundation.
 6. Attendance.
 7. Staff/payroll.
