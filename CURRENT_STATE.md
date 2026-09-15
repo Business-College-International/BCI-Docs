@@ -8,9 +8,9 @@
 The docs repository is the canonical engineering source of truth for architecture, domain model, security boundaries, financial invariants, state machines, API contracts, roadmap and release criteria.
 
 ### Backend
-`bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, admissions and academic-structure modules.
+`bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, admissions, academic-structure and student-read modules.
 
-The backend now also has a reusable server-side permission-code decorator/guard backed by `UserPermission`, while existing role checks remain transitional until permission provisioning and object/scope authorization are complete.
+The backend also has a reusable server-side permission-code decorator/guard backed by `UserPermission`, while existing role checks remain transitional until permission provisioning and object/scope authorization are complete.
 
 Every HTTP response receives a server-generated `X-Request-Id` correlation identifier.
 
@@ -26,6 +26,13 @@ Authenticated staff admissions endpoints include:
 - `GET /api/v1/applications`
 - `POST /api/v1/applications/:id/review`
 - `POST /api/v1/applications/:id/admit`
+
+Authenticated student/guardian reads now include:
+
+- `GET /api/v1/students/me/wards`
+- `GET /api/v1/students/:id`
+
+Guardian access is relationship-scoped: a guardian can read only a linked ward. Privileged office/leadership roles can read student records; teacher-specific class/object scoping remains a separate authorization task.
 
 The Prisma model uses a dedicated application tracking code rather than exposing the application UUID as the public lookup credential.
 
@@ -53,18 +60,18 @@ There are currently no open pull requests or open issues in the BCI organization
 1. Generate and verify the initial Prisma migration from the hardened schema and establish a repeatable PostgreSQL verification path.
 2. Complete permission provisioning plus object/scope authorization; role checks are still transitional.
 3. Add structured logging, rate limiting and centralized environment/secret validation.
-4. Add guardian/student profile APIs and complete the student lifecycle.
+4. Complete guardian/student lifecycle mutations and profile management.
 5. Verify the live Moolre API contract before implementing provider adapters and reconciliation workers.
 6. Build fee charges, payment intents, reconciliation, receipts and immutable journal posting before finance goes live.
 7. Build attendance, staff/payroll, wallet, inventory, messaging and notification workflows.
-8. Add unit, integration and cross-repository journey tests.
+8. Expand unit, integration and cross-repository journey tests.
 9. Establish deployment, secrets, backups, restore drills and production monitoring.
 
 ## Current next execution order
 
 1. Prisma migration + database verification.
 2. Permission provisioning and object/scope authorization.
-3. Guardian/student identity linking and student lifecycle.
+3. Guardian/student lifecycle mutations and profile management.
 4. Complete admissions admission/enrolment UI using academic-year/term/class APIs.
 5. Finance/payment foundation.
 6. Attendance.
