@@ -8,7 +8,7 @@
 `bci-docs` is the canonical engineering source of truth for architecture, domain model, security boundaries, financial invariants, state machines, API contracts, roadmap and release criteria.
 
 ### Backend
-`bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, admissions, academic-structure, student lifecycle, finance, and attendance modules.
+`bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, admissions, academic-structure, student lifecycle, finance, attendance, and assessment modules.
 
 Authorization has a canonical permission catalog plus `RolePermission` for default capabilities and `UserPermission` for explicit exceptions. The permission guard resolves both role defaults and direct grants.
 
@@ -47,23 +47,36 @@ Moolre adapter/callback code has not been introduced. Provider behavior must be 
 
 ### Attendance foundation
 
-The first attendance slice is implemented and permission/scope constrained:
+The attendance slice is implemented and permission/scope constrained:
 
-- `POST /api/v1/attendance/sessions` creates a class/term attendance session.
-- `POST /api/v1/attendance/sessions/:sessionId/records` records or updates attendance.
-- `GET /api/v1/attendance/students/:studentId?termId=...` returns a scoped attendance summary and session history.
+- `POST /api/v1/attendance/sessions`
+- `GET /api/v1/attendance/sessions/:sessionId/roster`
+- `POST /api/v1/attendance/sessions/:sessionId/records`
+- `GET /api/v1/attendance/students/:studentId?termId=...`
 
-Teacher session creation and marking require `attendance.manage` and are checked against the teacher's class/term/subject assignment. Privileged school roles can manage attendance more broadly.
+Teacher session creation, roster access, and marking are checked against the teacher's class/term/subject assignment. Privileged school roles can manage attendance more broadly.
 
 Attendance sessions validate class/term academic-year consistency, session date inside term dates, term not closed, start/end ordering, and subject/class-level compatibility.
+
+The roster endpoint returns the authoritative active class roster with existing attendance status, so clients do not need to invent or manually enumerate student IDs.
 
 Attendance records can only be written for students with active enrolments in the session class and term. Duplicate student entries in one marking request are rejected. Changes are audited.
 
 Guardians receive the `attendance.read` role capability, but `canViewAcademic` on the specific guardian-student link still controls whether that guardian can see a ward's attendance. Teachers can read attendance for students in their assigned active class/term; privileged school roles can read broader records.
 
-Focused attendance tests cover teacher assignment denial, out-of-class student rejection, guardian academic-visibility denial, and privileged read access.
+Focused attendance tests cover teacher assignment denial, out-of-class student rejection, guardian academic-visibility denial, and privileged access.
 
-The deterministic Prisma seed now grants guardians `attendance.read`; link-level academic visibility remains the final object-level gate.
+### Assessments foundation
+
+Assessments are now implemented without database changes:
+
+- `POST /api/v1/assessments`
+- `POST /api/v1/assessments/:assessmentId/results`
+- `GET /api/v1/assessments/students/:studentId?termId=...`
+
+Assessment creation requires assignment to the subject/term for teachers and is limited to open terms. Result entry verifies assignment scope, active student enrolment in a class assigned for that subject/term, duplicate-student rejection, and score <= maxScore. Result updates are upserts and audited.
+
+Students/guardians with the appropriate academic relationship can read assessment results; guardian access still obeys `canViewAcademic`. Teachers are limited to students within their active assigned class/term. Focused tests cover teacher authorization, student scope, and score bounds.
 
 ### Runtime/security foundation
 
@@ -73,7 +86,7 @@ Every HTTP response receives a server-generated `X-Request-Id` correlation ident
 
 Startup validates `DATABASE_URL`, `JWT_ACCESS_SECRET`, `NODE_ENV`, `PORT`, and production `CORS_ORIGINS` before listening. HTTP requests emit structured timing/status logs. A dependency-free in-process limiter protects authentication and public application endpoints; distributed rate limiting remains a production gate before horizontal scaling.
 
-The Prisma schema baseline was restored from the last complete Git blob after a reviewed schema-edit attempt was found to have truncated the file. Finance, payment-provider, wallet, inventory, notification, audit, and attendance models are confirmed present again. No migration was generated from the truncated version.
+The Prisma schema baseline was restored from the last complete Git blob after a reviewed schema-edit attempt was found to have truncated the file. Finance, payment-provider, wallet, inventory, notification, audit, attendance, and assessment models are confirmed present again. No migration was generated from the truncated version.
 
 ### Public/authenticated backend endpoints
 
@@ -101,8 +114,14 @@ Finance:
 
 Attendance:
 - `POST /api/v1/attendance/sessions`
+- `GET /api/v1/attendance/sessions/:sessionId/roster`
 - `POST /api/v1/attendance/sessions/:sessionId/records`
 - `GET /api/v1/attendance/students/:studentId?termId=...`
+
+Assessments:
+- `POST /api/v1/assessments`
+- `POST /api/v1/assessments/:assessmentId/results`
+- `GET /api/v1/assessments/students/:studentId?termId=...`
 
 The Prisma model uses a dedicated application tracking code rather than exposing application UUIDs as public lookup credentials. Provider payment attempts and webhook events have durable models for future reconciliation.
 
@@ -132,25 +151,24 @@ There are currently no open pull requests or open issues in the BCI organization
 ## Open blockers before production
 
 1. Generate and verify the initial Prisma migration from the complete hardened schema and establish a repeatable PostgreSQL verification path.
-2. Complete remaining object/scope authorization across assessments, finance, inventory, messaging, staff, and remaining academic workflows.
+2. Complete remaining object/scope authorization across finance, inventory, messaging, staff, and remaining academic workflows.
 3. Replace the bootstrap in-process rate limiter with distributed protection before running multiple API instances.
 4. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model; the current `Enrolment` uniqueness model has intentionally not been weakened.
 5. Finalize the payment-intent invoice-target/reservation schema and only then expose payment creation.
 6. Verify the live Moolre API contract before implementing provider adapters and reconciliation workers.
 7. Build successful payment allocation, receipts, refunds, immutable journal posting, and reconciliation before finance goes live.
-8. Expand attendance reporting/roster UX and teacher/mobile attendance workflows.
-9. Build assessment/results, staff/payroll, wallet, inventory, messaging, and notification workflows.
+8. Expand attendance roster/teacher/mobile UX and reporting.
+9. Build report-card/grading rules, staff/payroll, wallet, inventory, messaging, and notification workflows.
 10. Establish deployment, secrets, backups, restore drills, and production monitoring.
 
 ## Current next execution order
 
 1. Prisma migration + database verification.
-2. Remaining object/scope authorization.
-3. Complete admissions/guardian/teacher journey parity in web and mobile.
-4. Finalize payment reservation schema and reconciliation design.
-5. Finance payment/receipt foundation after schema verification.
-6. Attendance roster/teacher workflows and reporting.
-7. Assessments/results.
-8. Staff/payroll.
-9. Wallet/inventory.
-10. Communication/notifications and reporting hardening.
+2. Complete web/mobile academic parity for attendance and assessments.
+3. Finalize payment reservation schema and reconciliation design.
+4. Finance payment/receipt foundation after schema verification.
+5. Report cards/grading and academic reporting.
+6. Staff/payroll.
+7. Wallet/inventory.
+8. Communication/notifications.
+9. Reporting and production hardening.
