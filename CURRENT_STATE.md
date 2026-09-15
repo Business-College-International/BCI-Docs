@@ -14,6 +14,8 @@ Authorization now has a canonical permission catalog plus a `RolePermission` mod
 
 A deterministic Prisma seed establishes role-permission defaults without creating fake school users or records.
 
+`GET /api/v1/auth/me` now returns the server-authoritative current-user profile, roles, effective permissions, direct scoped permission assignments, and linked guardian/staff profile where applicable.
+
 Every HTTP response receives a server-generated `X-Request-Id` correlation identifier.
 
 Internal academic-structure reads are authenticated; academic years and class streams are no longer public endpoints.
@@ -36,12 +38,14 @@ Authenticated student/guardian reads include:
 
 Guardian access is relationship-scoped: a guardian can read only a linked ward. Privileged office/leadership roles can read student records; teacher-specific class/object scoping remains a separate authorization task.
 
-Admission identity linking is also hardened: an existing guardian account may be linked by phone, but a non-guardian account cannot be silently attached to a student. Pre-created guardian Person records are reused during later guardian registration instead of duplicated.
+Admission identity linking is hardened: an existing guardian account may be linked by phone, but a non-guardian account cannot be silently attached to a student. Pre-created guardian Person records are reused during later guardian registration instead of duplicated.
 
 The Prisma model uses a dedicated application tracking code rather than exposing the application UUID as the public lookup credential. Provider payment attempts and webhook events now have durable models for future Moolre reconciliation.
 
 ### Web portal
 `bci-web-portal` has a staff sign-in surface, authenticated admissions workspace, application list/review controls, and public tracking-code lookup aligned to the backend contract.
+
+The portal now verifies the access token by calling `/auth/me` before showing the authenticated workspace. Application list and review controls use server-returned permission codes rather than treating token presence as sufficient authorization.
 
 ### Mobile
 `bci-mobile-app` has a Flutter/Riverpod shell and an admissions-status screen using the same tracking-code contract as web and backend. Full guardian authentication and authenticated staff experiences remain in progress.
