@@ -18,7 +18,7 @@ Admissions endpoints use explicit permission checks for list/review/admit operat
 
 Student reads require `students.read` and then apply object scope: linked guardians may read only their wards; privileged office/leadership roles may read broader student records; teachers may read only students belonging to classes and terms covered by their `TeacherAssignment`. Student documents remain restricted to privileged staff.
 
-Guardian relationship permissions are now enforced: `canViewAcademic` controls academic visibility for guardians, while `canPayFees` and `canManageWallet` are carried as explicit link-level permissions for the finance/wallet layers.
+Guardian relationship permissions are enforced: `canViewAcademic` controls academic visibility for guardians, while `canPayFees` and `canManageWallet` are carried as explicit link-level permissions for the finance/wallet layers.
 
 School staff with `students.manage` can create and remove guardian/student links. Linking can designate a single primary contact and set the three guardian link permissions. Link creation/removal is transactional and audited; duplicate links are rejected.
 
@@ -31,6 +31,10 @@ Academic endpoints use explicit `academics.read` / `academics.manage` permission
 A deterministic Prisma seed establishes role-permission defaults without creating fake school users or records.
 
 Every HTTP response receives a server-generated `X-Request-Id` correlation identifier.
+
+The Prisma schema baseline was restored from the last complete Git blob after a reviewed schema-edit attempt was found to have truncated the file. Finance, payment-provider, wallet, inventory, notification and audit models are confirmed present again. No migration was generated from the truncated version.
+
+### Public/authenticated backend endpoints
 
 Current public admissions endpoints:
 
@@ -86,10 +90,10 @@ There are currently no open pull requests or open issues in the BCI organization
 
 ## Open blockers before production
 
-1. Generate and verify the initial Prisma migration from the hardened schema and establish a repeatable PostgreSQL verification path.
+1. Generate and verify the initial Prisma migration from the complete hardened schema and establish a repeatable PostgreSQL verification path.
 2. Complete remaining object/scope authorization across attendance, assessments, finance, inventory, messaging and staff workflows.
 3. Add structured logging, rate limiting and centralized environment/secret validation.
-4. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model before implementation.
+4. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model before implementation; the current `Enrolment` uniqueness model has intentionally not been weakened yet.
 5. Verify the live Moolre API contract before implementing provider adapters and reconciliation workers.
 6. Build fee charges, payment intents, reconciliation, receipts and immutable journal posting before finance goes live.
 7. Build attendance, staff/payroll, wallet, inventory, messaging and notification workflows.
