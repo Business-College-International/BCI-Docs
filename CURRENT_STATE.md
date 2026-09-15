@@ -5,46 +5,54 @@
 ## What is true now
 
 ### Documentation
-The docs repository contains the canonical engineering entrypoint, architecture, domain model, security boundaries, financial invariants, state machines, API contracts, roadmap and release checklist.
+The docs repository contains the canonical engineering entrypoint, architecture, domain model, security boundaries, financial invariants, state machines, API contracts, roadmap and release checklist. fileciteturn93file0
 
 ### Backend
-`bci-backend-api` has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, and the first admissions application module.
+`bci-backend-api` now has a NestJS bootstrap, strict TypeScript configuration, Prisma service, global request validation, `/api/v1/health`, JWT authentication/session rotation, and admissions plus academic-structure modules.
 
 Current public admissions endpoints:
 
 - `POST /api/v1/applications`
 - `GET /api/v1/applications/track/:trackingCode`
 
-The Prisma application model now issues a dedicated tracking code rather than exposing the application UUID as the public lookup credential.
+Authenticated staff admissions endpoints now include:
+
+- `GET /api/v1/applications`
+- `POST /api/v1/applications/:id/review`
+- `POST /api/v1/applications/:id/admit`
+
+The Prisma model uses a dedicated application tracking code rather than exposing the application UUID as the public lookup credential.
+
+The hardened schema now separates Person/User identity, academic years/terms/enrolments, attendance sessions, assessments, invoices/payment allocations/receipts/refunds, wallet transactions, payroll periods/entries/disbursements, inventory movements, notifications and audit records.
 
 ### Web portal
-`bci-web-portal` has a Vite/React/TypeScript shell, TanStack Query, an API client and an initial admissions-status surface wired to the backend contract. Authentication/RBAC is not yet implemented and therefore must not be treated as production-ready.
+`bci-web-portal` now has a staff sign-in surface, authenticated admissions workspace, application list/review controls, and public tracking-code lookup aligned to the backend contract.
 
 ### Mobile
-`bci-mobile-app` has a Flutter/Riverpod shell and an initial admissions-status screen using the same backend tracking-code contract. Authentication, guardian identity, secure session lifecycle and push registration are still pending.
+`bci-mobile-app` has a Flutter/Riverpod shell and an admissions-status screen using the same tracking-code contract as web and backend. Full guardian authentication and authenticated staff experiences remain in progress.
 
 ### Public website
-`bci-website` has a responsive React/Vite public shell covering KG/JHS/SHS, the four SHS programmes and the unified admissions concept. The application form itself is still pending.
+`bci-website` now contains a public BCI shell and a real admissions form that submits to the shared backend application endpoint and returns an authoritative tracking code.
 
-## Known blockers before production
+## Open blockers before production
 
-1. Replace the starter Prisma schema with the hardened domain model and generate real migrations.
-2. Implement authentication, refresh-token rotation, MFA/step-up controls where appropriate, RBAC and scoped object authorization.
-3. Implement authenticated admissions review and application-to-student/enrolment transaction.
-4. Add request correlation IDs, structured audit logs and rate limiting.
-5. Add idempotency persistence before accepting retryable public or financial mutations.
-6. Build immutable financial journal/payment/reconciliation structures before fees, wallet or payroll go live.
-7. Add provider integrations only behind explicit adapters and reconciliation workers.
-8. Add automated tests at unit, integration and cross-workflow levels.
-9. Establish deployment, secret management, backups, restore drills and monitoring.
+1. Generate and verify the initial Prisma migration from the hardened schema and add PostgreSQL migration CI. Issue `bci-backend-api#5` tracks this gate. fileciteturn170file0
+2. Replace coarse role checks with complete permission + object/scope authorization.
+3. Add request correlation IDs, structured logging, rate limiting and centralized environment/secret validation.
+4. Add guardian/student profile APIs and complete the student lifecycle.
+5. Implement Moolre through explicit provider adapters and reconciliation workers only after its live API contract is verified.
+6. Build fee charges, payment intents, reconciliation, receipts and immutable journal posting before finance goes live.
+7. Build attendance, staff/payroll, wallet, inventory, messaging and notification workflows.
+8. Add unit, integration and cross-repository journey tests.
+9. Establish deployment, secrets, backups, restore drills and production monitoring.
 
 ## Current next execution order
 
-1. Identity/RBAC foundation.
-2. Hardened school/academic schema.
-3. Admissions review → admit → enrolment.
-4. Guardian linking and student profile.
-5. Fee charge/payment/reconciliation foundation.
+1. Prisma migration + database CI.
+2. Permission/scoping hardening.
+3. Guardian/student identity linking and student lifecycle.
+4. Complete admissions admission/enrolment UI using academic-year/term/class APIs.
+5. Finance/payment foundation.
 6. Attendance.
 7. Staff/payroll.
 8. Wallet/inventory.
