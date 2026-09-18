@@ -3,6 +3,7 @@
 ## Completed
 
 - Wallet balances are calculated from the complete transaction ledger, not the displayed history window.
+- Successful provider wallet top-ups are converted into `TOP_UP` credit entries only after the verified payment webhook settles the payment.
 - `TOP_UP` transactions increase balance.
 - `WITHDRAWAL` transactions decrease balance.
 - The current schema's `REVERSAL` transaction does not identify a source transaction, so wallets containing reversal rows are flagged `LEDGER_POLICY_REQUIRED` instead of exposing a potentially incorrect balance.
@@ -15,10 +16,12 @@
 
 ## Deliberate gates
 
-- Wallet top-up remains behind the payment provider/reservation gate.
+- Guardian wallet top-up initiation now creates an idempotent `WALLET_TOP_UP` payment reservation and starts the provider collection; wallet credit is still created only from verified provider settlement.
+- Provider OTP continuation is permitted for wallet top-ups only when the guardian relationship has `canManageWallet`.
 - Provider references are not invented for cash withdrawals.
-- A future reversal model should identify the transaction being reversed before reversal amounts participate in balance calculation.
+- Reversals now identify exactly one original transaction and create the opposite signed effect; an original transaction may be reversed only once.
 - A richer withdrawal-request model can be added later if BCI needs pending/approval states before cash is actually handed to a student; the current operation represents an immediate authorized office disbursement.
+- Wallet top-up initiation is intentionally separate from fee invoice payment allocation; it creates no invoice allocation.
 
 ## Verification requirement
 
