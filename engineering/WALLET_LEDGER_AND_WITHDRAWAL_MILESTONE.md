@@ -12,6 +12,7 @@
 - Withdrawals cannot exceed the current ledger balance.
 - Concurrent serialization conflicts return a retryable conflict rather than risking an overdraft.
 - Every completed withdrawal writes an audit record.
+- Finance integrity reporting now checks wallet/payment linkage, signed transaction directions, reversal references, missing wallet credits for succeeded top-ups, and negative wallet balances.
 - Guardian portal shows wallet balance/history but cannot perform cash withdrawals.
 
 ## Deliberate gates
