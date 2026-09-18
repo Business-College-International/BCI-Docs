@@ -7,6 +7,7 @@
 - Explicit `DRAFT -> SUBMITTED -> APPROVED/REJECTED` lifecycle.
 - Submitter cannot approve or reject their own expense.
 - Mutations are transactional and audited.
+- Expense submission and approval decisions lock the expense row before state evaluation, while conditional transitions remain in place as a second concurrency safeguard.
 - Monetary values are serialized with fixed decimal precision.
 - Actual payment/disbursement remains separate from expense approval.
 
@@ -32,4 +33,4 @@ The current payroll schema has `approvedBy` but does not persist `calculatedBy`.
 
 The current schema also does not include a durable conversation/thread/message model. Staff chat is therefore not being fabricated in application code; it remains a deliberate schema-design gate.
 
-The PostgreSQL migration contract remains unverified until the manual/PR database workflow executes successfully. No production migration is claimed from static inspection alone.
+The current backend PR database and PostgreSQL contract workflows have passed on the wallet/finance integration branch. Production activation still requires the separate release gates described in the payment-provider and payroll milestones.
