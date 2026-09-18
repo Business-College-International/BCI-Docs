@@ -35,6 +35,6 @@ StudentWallet
 
 The backend exposes a read-only wallet statement endpoint for guardians and authorized school roles.
 
-The endpoint deliberately returns `balance: null` with `balanceStatus: LEDGER_POLICY_REQUIRED` until the reversal/reference semantics are added to the authoritative schema.
+The endpoint returns `balance: null` with `balanceStatus: LEDGER_POLICY_REQUIRED` when legacy or malformed ledger rows lack complete signed reversal semantics.
 
-Top-ups, physical withdrawals, reversals, and wallet adjustments are not exposed yet.
+Guardian wallet top-up initiation and controlled office withdrawals are exposed. Verified provider settlement creates the wallet credit; physical withdrawals and reversals are compensating append-only transactions.
