@@ -29,7 +29,7 @@
 
 ## Explicit limitations / gates
 
-The current payroll schema has `approvedBy` but does not persist `calculatedBy`. Therefore true maker/checker separation between payroll calculation and payroll approval cannot yet be enforced at the database level. The application currently enforces role access and approval-state transitions, but a future migration should add the calculation actor and approval audit fields before production payroll approval is considered fully segregated.
+The payroll schema now persists `calculatedBy` and `calculatedAt` alongside `approvedBy`/`approvedAt`. Payroll approval rejects the same user who calculated the period, giving the maker/checker separation a durable database record and an application-level enforcement point.
 
 The current schema also does not include a durable conversation/thread/message model. Staff chat is therefore not being fabricated in application code; it remains a deliberate schema-design gate.
 
