@@ -9,6 +9,7 @@
 - Added backend regression tests using real `Prisma.Decimal` values.
 - Added the finance integrity workspace to the staff web portal.
 - Corrected the PostgreSQL schema contract workflow so drift comparison uses the Prisma datamodel against the actual clean PostgreSQL URL rather than comparing the database datasource to itself.
+- Wallet ledger integrity checks now surface malformed signed effects, invalid payment links, succeeded wallet top-ups without ledger credits, invalid reversals, and negative wallet balances.
 
 ## Payment gate still not active
 
