@@ -1,6 +1,6 @@
 # BCI Current State
 
-**Last reconciled:** 2026-09-15
+**Last reconciled:** 2026-09-18
 
 ## What is true now
 
@@ -223,8 +223,8 @@ There are currently no open pull requests or open issues in the BCI organization
 
 ## Open blockers before production
 
-1. Execute and review the database-contract workflow successfully, then establish the canonical initial Prisma migration from the verified complete schema.
-2. Complete remaining object/scope authorization across finance, inventory, messaging, staff, payroll, wallet, and remaining academic workflows.
+1. Validate and preserve the incremental wallet-ledger migration currently under review; the canonical initial Prisma migration is now established and verified against clean PostgreSQL.
+2. Complete remaining object/scope authorization across finance, inventory, messaging, staff, payroll, wallet, and remaining academic workflows; teacher historical academic reads are now scoped to the requested term.
 3. Replace the bootstrap in-process rate limiter with distributed protection before running multiple API instances.
 4. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model; the current `Enrolment` uniqueness model has intentionally not been weakened.
 5. Finalize the payment-intent invoice-target/reservation schema and only then expose payment creation.
@@ -239,8 +239,8 @@ There are currently no open pull requests or open issues in the BCI organization
 
 ## Current next execution order
 
-1. Execute/review database contract verification and establish the canonical Prisma migration.
-2. Complete web/mobile academic parity for attendance, assessments, and academic reports.
+1. Complete the wallet ledger migration review and merge after all code/database gates are green.
+2. Complete remaining object/scope authorization audit and web/mobile academic parity for attendance, assessments, and academic reports.
 3. Build remaining staff web/mobile operational workflows.
 4. Finalize payment reservation schema and reconciliation design.
 5. Finance payment/receipt foundation after schema verification and provider-contract verification.
