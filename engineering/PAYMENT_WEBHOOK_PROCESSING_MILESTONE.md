@@ -9,10 +9,10 @@
 - Provider attempt status is synchronized with normalized payment status.
 - Terminal payment states cannot regress to a different status through a later event.
 - Missing payments, amount mismatches and currency mismatches are recorded on the durable webhook event instead of being silently discarded.
-- Moolre verification, normalization and initiation remain explicitly disabled until the live provider contract and credentials are independently verified.
+- Moolre verification, normalization, initiation and OTP continuation are implemented behind an explicit live-money configuration gate; default CI/local configuration remains MOCK.
 
-## Deliberate boundaries
+## Settlement boundaries
 
-The processor does not create allocations, receipts, reservations or journal entries. Successful provider callbacks therefore cannot create financial records that have not passed the reservation/allocation gate.
+The processor updates durable payment state only after provider verification. Verified success can issue a receipt and settle purpose-specific downstream effects, including fee allocation, wallet top-up ledger credit and stationery-order `PAID` transition. These effects remain inside the same database transaction as payment settlement.
 
-The durable reservation schema is still migration-gated. A payment may not be initiated merely because the preflight layer says an amount could be allocated.
+Duplicate webhook events and repeated wallet/stationery settlement are idempotent against durable payment/domain identifiers.
