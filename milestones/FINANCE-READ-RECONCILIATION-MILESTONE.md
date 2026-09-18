@@ -1,6 +1,6 @@
 # Finance Read/Reconciliation Milestone
 
-Status: implemented at application-contract level; runtime CI/database verification still pending.
+Status: implemented at application-contract level; backend PR CI and PostgreSQL contract verification are passing on the current implementation branch.
 
 ## Backend
 
@@ -24,11 +24,10 @@ Status: implemented at application-contract level; runtime CI/database verificat
 
 ## Deliberate boundary
 
-- No live payment creation endpoint has been enabled.
-- No Moolre request/collection flow is enabled.
-- No payment reservation/invoice-target schema has been persisted yet.
-- No wallet mutation has been enabled.
-- These remain gated by the verified PostgreSQL migration and payment-reservation design.
+- Payment initiation, wallet top-up and stationery payment reservation paths exist in the backend.
+- The Moolre adapter remains MOCK unless the explicit live-money configuration gate is satisfied.
+- Successful verified provider settlement is the only path that mutates collected-payment/wallet/stationery financial state.
+- Fee allocation remains separate from wallet and stationery ledgers.
 
 ## Verification status
 
