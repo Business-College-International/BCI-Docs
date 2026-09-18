@@ -14,6 +14,9 @@
 - Repeat fulfillment is rejected because only `PAID` orders can enter fulfillment.
 - Collection is separately recorded and audited.
 - No stationery operation fabricates payment success.
+- Guardian payment initiation creates the `STATIONERY` payment before the provider call and links that attempt to the draft order.
+- Explicit provider rejection returns the order to an unpaid draft; ambiguous provider outcomes remain processing for reconciliation.
+- Verified successful payment webhooks transition the linked order to `PAID` atomically with the payment settlement.
 
 ## Deliberate gates
 
@@ -24,4 +27,4 @@
 
 ## Next integration
 
-The natural next connection is `StationeryOrder -> payment preflight/reservation -> verified provider payment -> paid order`, followed by guardian receipt/history and operational stock reporting.
+The core `StationeryOrder -> provider payment -> verified webhook -> PAID` path is now implemented. The next layer is guardian payment history/receipt presentation and operational stock/reporting views, followed by the client-app flows.
