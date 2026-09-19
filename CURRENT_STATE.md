@@ -132,15 +132,15 @@ Backend CI validates Prisma, generates the client, compiles, and runs Jest. The 
 
 Organization-wide workflow scanning found no remaining `push:` trigger in the BCI repositories.
 
-The wallet, grading-policy, progression, and report-card publication review slices have been validated and merged into their respective mainlines. Remaining work is tracked below.
+The wallet, grading-policy, progression, report-card publication, and PaymentIntent reservation slices have been validated and merged into their respective mainlines. Remaining work is tracked below.
 
 ## Open blockers before production
 
-1. Continue finance hardening with a dedicated PaymentIntent reservation entity and production provider verification.
+1. Verify the live Moolre API contract before enabling real-money provider operation; PaymentIntent reservations are now implemented and validated.
 2. Complete remaining object/scope authorization and cross-channel parity across finance, inventory, messaging, staff, payroll, wallet, attendance, assessments and report-card history.
 3. Replace the bootstrap in-process rate limiter with distributed protection before running multiple API instances.
 4. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model; the current `Enrolment` uniqueness model has intentionally not been weakened.
-5. Finalize the dedicated payment-intent invoice-target/reservation schema; the current Payment + pending allocations mechanism remains a hardening boundary.
+5. Add automated reconciliation to mark expired PaymentIntent reservations as `EXPIRED` and clear operational stale state.
 6. Verify the live Moolre API contract before enabling real-money provider operation.
 7. Complete successful payment allocation, receipts, refunds, immutable journal posting, and reconciliation before finance goes live.
 8. Complete wallet reconciliation/operational review and preserve the signed ledger/withdrawal evidence model.
@@ -155,11 +155,11 @@ The wallet, grading-policy, progression, and report-card publication review slic
 1. Complete wallet/grading backend migration review and merge after all code/database gates are green.
 2. Complete remaining object/scope authorization audit and web/mobile academic parity for attendance, assessments, academic reports, and grading.
 3. Build remaining staff web/mobile operational workflows.
-4. Finalize payment reservation schema and reconciliation design.
+4. Complete PaymentIntent expiry reconciliation and live-provider verification design.
 5. Finance payment/receipt foundation after schema verification and provider-contract verification.
 6. Report-card correction/history and publishing operations.
 7. Payroll approval/disbursement.
-8. Dedicated payment-intent reservation and production finance hardening.
+8. Finance production hardening after provider verification, expiry reconciliation, receipts/refunds and journal/reconciliation completion.
 9. Inventory.
 10. Communication/notifications.
 11. Reporting and production hardening.
