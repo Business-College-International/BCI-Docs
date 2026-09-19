@@ -1,6 +1,6 @@
 # BCI Current State
 
-**Last reconciled:** 2026-09-18
+**Last reconciled:** 2026-09-19
 
 ## What is true now
 
@@ -67,25 +67,25 @@ Invoices are issued transactionally from active fee schedules that match the stu
 
 Guardians can read invoices only when their guardian-student link has `canPayFees=true`. Finance staff use server-side finance permissions.
 
-Payment-intent creation is intentionally **not** exposed yet. `PAYMENT_INTENT_DESIGN.md` defines the required reservation, expiry, idempotency, concurrency, callback, allocation and receipt invariants. The preferred design is a dedicated payment-intent/reservation record linked to the target invoice and eventual financial payment.
+A guarded payment-initiation path is now implemented for fee payments. It requires an idempotency key, rechecks invoice availability inside a serializable transaction, reserves only currently available invoice balance, records a provider attempt, and reconciles provider ambiguity through the webhook path.
 
-Moolre adapter/callback code has not been introduced. Provider behavior must be verified before integration is implemented. The live contract is not being guessed from static assumptions.
+The backend now includes a Moolre adapter with explicit MOCK/LIVE gating, webhook verification/normalization, provider-attempt history, OTP continuation and audited settlement handling. The live-money gate remains disabled unless the explicit production confirmation and complete credentials are present.
 
-The Flutter guardian app exposes a read-only fee view for wards whose relationship has `canPayFees=true`. It shows server-derived invoice totals, allocated amounts, outstanding balance, due date and invoice lines. It deliberately has no payment button until the reservation/provider flow is production-safe.
+The current fee flow still uses the Payment row plus pending PaymentAllocation rows as the operational reservation mechanism. A dedicated PaymentIntent relation remains a hardening task before finance is production-ready because the canonical design separates an operational reservation from the eventual financial payment.
+
+The Flutter guardian fee screen remains review-first rather than directly starting provider payment.
 
 ### Wallet foundation
 
-The backend exposes a read-only wallet statement endpoint:
+The wallet slice now has signed ledger effects and controlled operations. The read endpoint is `GET /api/v1/wallets/students/:studentId`; guardians are constrained by guardian-student `canManageWallet`, while authorized school roles have broader access.
 
-- `GET /api/v1/wallets/students/:studentId`
+Wallet balances are derived from explicit CREDIT/DEBIT effects. Legacy or malformed rows without complete signed semantics result in `LEDGER_POLICY_REQUIRED` instead of an invented balance.
 
-Access requires `wallet.read` and is then constrained by guardian-student `canManageWallet` for guardians. Director/principal/office/accountant roles have broader read access.
+Guardian wallet top-up initiation and Moolre OTP continuation are implemented. Provider success is the only path that creates the signed wallet credit.
 
-The endpoint intentionally does **not** calculate or report an authoritative wallet balance yet. The current `WalletTransaction.REVERSAL` model lacks an original-transaction reference/direction, so deriving a balance from type alone could be financially incorrect. `WALLET_LEDGER_DESIGN.md` defines the required signed-effect, reversal-reference, provider-linkage, concurrency, and office-dispense invariants.
+Office withdrawals create a durable `WalletWithdrawal` evidence record linked one-to-one to the immutable wallet transaction. The record captures amount, reason, operators, requested/approved/verified/dispensed timestamps and later reversal evidence. Reversals create compensating ledger entries and mark the linked withdrawal evidence `REVERSED`.
 
-Top-ups, physical withdrawals, reversals, and wallet adjustments are not exposed yet.
-
-The Flutter guardian app now has a read-only wallet statement view for wards whose relationship has `canManageWallet=true`. It shows transaction history and explicitly reports that balance calculation is pending the ledger policy; it does not fabricate a zero balance.
+The Flutter guardian wallet page now supports top-up initiation, OTP continuation and signed transaction display. It does not claim that a top-up changed the wallet balance until verified provider settlement.
 
 ### Attendance foundation
 
@@ -196,7 +196,7 @@ Assessments/reports:
 - `GET /api/v1/academic-reports/students/:studentId/current`
 - `GET /api/v1/academic-reports/students/:studentId/terms/:termId`
 
-The Prisma model uses a dedicated application tracking code rather than exposing application UUIDs as public lookup credentials. Provider payment attempts and webhook events have durable models for future reconciliation.
+The Prisma model uses a dedicated application tracking code rather than exposing application UUIDs as public lookup credentials. Provider payment attempts, webhook events, signed wallet effects and withdrawal evidence have durable models for reconciliation.
 
 ### Web portal
 `bci-web-portal` now has the staff sign-in surface, server-authoritative session verification, a staff workspace showing the authenticated employee's active duties/teaching assignments, authenticated admissions workspace, application list/review controls, public tracking-code lookup, and a server-driven admission placement workflow.
@@ -213,7 +213,7 @@ The portal uses server-returned permission codes. The staff workspace only loads
 
 GitHub Issues are not the default implementation journal during foundation work. Active work is tracked by canonical docs and repository commits; issues are opened only for bounded reviewable tasks when useful.
 
-Backend, web portal, mobile, and public website CI run only on pull requests or intentional manual dispatch. Direct pushes to `main` do not trigger these workflows.
+Backend, web portal, mobile, and public website CI run only on pull requests or intentional manual dispatch. Direct pushes to `main` do not trigger these workflows. Backend, Flutter and Web workflows also cancel superseded validations so rapid changes do not leave obsolete runs competing for attention.
 
 Backend CI validates Prisma, generates the client, compiles, and runs Jest. The dedicated database-contract workflow additionally boots PostgreSQL 16 and checks schema-to-database equivalence. Web CI builds the portal. Flutter CI runs analysis/tests. Website CI builds the public site.
 
