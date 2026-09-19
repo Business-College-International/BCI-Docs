@@ -132,16 +132,15 @@ Backend CI validates Prisma, generates the client, compiles, and runs Jest. The 
 
 Organization-wide workflow scanning found no remaining `push:` trigger in the BCI repositories.
 
-The wallet, grading-policy, progression, report-card publication, and PaymentIntent reservation slices have been validated and merged into their respective mainlines. Remaining work is tracked below.
+The wallet, grading-policy, progression, report-card publication, PaymentIntent reservation, and distributed rate-limiting slices have been validated and merged into their respective mainlines. Remaining work is tracked below.
 
 ## Open blockers before production
 
 1. Verify the live Moolre API contract before enabling real-money provider operation.
 2. Complete remaining object/scope authorization and cross-channel parity across finance, inventory, messaging, staff, payroll, wallet, attendance, assessments and report-card history.
-3. Replace the bootstrap in-process rate limiter with distributed protection before running multiple API instances.
-4. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model; the current `Enrolment` uniqueness model has intentionally not been weakened.
-7. Complete successful payment allocation, receipts, refunds, immutable journal posting, and reconciliation before finance goes live.
-8. Complete wallet reconciliation/operational review and preserve the signed ledger/withdrawal evidence model.
+3. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model; the current `Enrolment` uniqueness model has intentionally not been weakened.
+4. Complete successful payment allocation, receipts, refunds, immutable journal posting, and reconciliation before finance goes live.
+5. Complete wallet reconciliation/operational review and preserve the signed ledger/withdrawal evidence model.
 9. Expand attendance roster/teacher/mobile UX and reporting.
 10. Complete report-card correction/history workflows and durable delivery/exports around the published snapshot.
 11. Establish timetable schema/versioning and conflict validation.
@@ -155,9 +154,8 @@ The wallet, grading-policy, progression, report-card publication, and PaymentInt
 3. Build remaining staff web/mobile operational workflows.
 4. Complete report-card correction/history and durable delivery/exports.
 5. Expand attendance roster/teacher/mobile UX and reporting.
-6. Report-card correction/history and publishing operations.
-7. Payroll approval/disbursement.
-8. Finance production hardening after provider verification, expiry reconciliation, receipts/refunds and journal/reconciliation completion.
-9. Inventory.
-10. Communication/notifications.
-11. Reporting and production hardening.
+6. Payroll approval/disbursement.
+7. Finance production hardening after provider verification, receipts/refunds and journal/reconciliation completion.
+8. Inventory.
+9. Communication/notifications.
+10. Reporting and production hardening.
