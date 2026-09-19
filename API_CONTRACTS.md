@@ -131,3 +131,10 @@ A dedicated PaymentIntent reservation entity remains a production-hardening item
 - POST /api/v1/grading-policies/:id/retire — retire an ACTIVE policy.
 
 The report service resolves an ACTIVE programme-specific policy first and falls back to a generic policy for the same academic year/level. The returned report identifies the policy version used for grade resolution. No grade is assigned when the relevant policy is absent.
+
+## Report-card publication API
+
+- `POST /api/v1/academic-reports/students/:studentId/terms/:termId/publications` — prepare an immutable snapshot after term closure and readiness checks.
+- `POST /api/v1/academic-reports/publications/:id/publish` — publish a prepared snapshot; the backend rejects stale snapshots and duplicate current publications.
+- `POST /api/v1/academic-reports/publications/:id/void` — void a published snapshot; a reason is mandatory and the original snapshot remains immutable.
+- `GET /api/v1/academic-reports/students/:studentId/terms/:termId/publications/current` — return the current published snapshot subject to normal report-read access scope.
