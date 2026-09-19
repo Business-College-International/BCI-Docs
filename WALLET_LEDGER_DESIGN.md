@@ -38,3 +38,11 @@ The backend exposes a read-only wallet statement endpoint for guardians and auth
 The endpoint returns `balance: null` with `balanceStatus: LEDGER_POLICY_REQUIRED` when legacy or malformed ledger rows lack complete signed reversal semantics.
 
 Guardian wallet top-up initiation and controlled office withdrawals are exposed. Verified provider settlement creates the wallet credit; physical withdrawals and reversals are compensating append-only transactions.
+
+## Withdrawal evidence implementation
+
+Each completed office withdrawal now has a durable `WalletWithdrawal` record linked one-to-one to its wallet transaction. The record captures requested, approved, verified and dispensed timestamps and actor IDs, the reason/amount, current lifecycle status, and later reversal evidence.
+
+The current immediate withdrawal endpoint records the full requested → approved → verified → dispensed sequence atomically under the authorized operator. A future dual-control approval workflow can use the same persisted lifecycle without changing the wallet ledger model.
+
+Reversing a withdrawal creates the compensating ledger transaction and moves the linked withdrawal record to `REVERSED`; the original wallet transaction remains immutable.
