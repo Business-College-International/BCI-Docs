@@ -132,7 +132,7 @@ Backend CI validates Prisma, generates the client, compiles, and runs Jest. The 
 
 Organization-wide workflow scanning found no remaining `push:` trigger in the BCI repositories.
 
-The wallet, grading-policy, progression, report-card publication, PaymentIntent reservation, and distributed rate-limiting slices have been validated and merged into their respective mainlines. Remaining work is tracked below.
+The wallet, grading-policy, progression, report-card publication, PaymentIntent reservation, expiry reconciliation, and distributed rate-limiting slices have been validated and merged into their respective mainlines. Remaining work is tracked below.
 
 ## Open blockers before production
 
