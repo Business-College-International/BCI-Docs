@@ -71,17 +71,20 @@ Clients branch on `code`, not localized message text.
 - `GET /api/v1/students/:id/attendance`
 
 ### Finance
-- `GET /api/v1/students/:id/charges`
-- `POST /api/v1/payment-intents`
-- `GET /api/v1/payments/:id`
-- `POST /api/v1/payments/:id/reconcile`
-- `GET /api/v1/students/:id/receipts`
+- `GET /api/v1/finance/fee-schedules?termId=...`
+- `POST /api/v1/finance/fee-schedules`
+- `POST /api/v1/finance/invoices`
+- `GET /api/v1/finance/students/:studentId/invoices`
+- `POST /api/v1/finance/students/:studentId/payments`
+- `POST /api/v1/finance/students/:studentId/payments/:paymentId/otp`
+- `GET /api/v1/finance/students/:studentId/receipts`
 - `POST /api/v1/refunds`
 
 ### Wallet
-- `POST /api/v1/students/:id/wallet/top-up-intents`
-- `GET /api/v1/students/:id/wallet`
-- `POST /api/v1/students/:id/wallet/withdrawals`
+- `GET /api/v1/wallets/students/:studentId`
+- wallet top-up initiation for guardians with `canManageWallet`
+- wallet top-up OTP continuation through the payment OTP contract
+- controlled office withdrawal/reversal operations
 
 ### Payroll
 - `GET /api/v1/payroll/periods`
@@ -110,3 +113,11 @@ Important committed events use stable event names and versioned payload schemas,
 - `announcement.published.v1`
 
 Events contain identifiers and relevant state snapshots but never credentials or secrets.
+
+## Financial contract implementation status
+
+Fee payment initiation currently uses idempotency, serializable invoice reservation and provider-attempt tracking. Pending/provider-processing records are not counted as collected funds.
+
+Wallet top-ups create the signed CREDIT ledger effect only after verified provider success. Office withdrawals create signed DEBIT effects together with durable withdrawal evidence; posted corrections use compensating reversal entries.
+
+A dedicated PaymentIntent reservation entity remains a production-hardening item. The current fee flow uses the Payment row plus pending allocations as its reservation representation and should not be treated as the final production payment-intent model.
