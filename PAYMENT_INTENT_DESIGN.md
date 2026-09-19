@@ -1,6 +1,6 @@
 # BCI Payment Intent Design Gate
 
-Implementation status: **PaymentIntent reservation schema and fee-flow integration are implemented and validated. Live-money provider verification and automated expiry reconciliation remain gated.**
+Implementation status: **PaymentIntent reservations, delayed fee allocation, provider-state synchronization, and self-healing expiry reconciliation are implemented and validated. Live-money provider verification remains gated.**
 
 ## Current implementation boundary
 
@@ -21,7 +21,7 @@ Before payment creation is enabled, the database must support these invariants a
 7. Provider attempts and webhook events reconcile through the associated Payment record and its PaymentIntent reservations without creating duplicate financial facts.
 8. Only a verified provider success transition can create the final `PaymentAllocation` and `Receipt`.
 9. Duplicate provider callbacks are harmless, produce no duplicate allocation/receipt, and remain auditable.
-10. Expired `PENDING`/`PROCESSING` intents are excluded from new-availability calculations; an automated reconciliation worker to mark them `EXPIRED` is still a later hardening task.
+10. Expired `PENDING`/`PROCESSING` intents are excluded from new-availability calculations, and the next reservation transaction marks stale intents `EXPIRED` with an auditable failure reason.
 
 ## Planned model shape
 
