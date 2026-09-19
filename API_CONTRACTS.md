@@ -116,11 +116,13 @@ Events contain identifiers and relevant state snapshots but never credentials or
 
 ## Financial contract implementation status
 
-Fee payment initiation currently uses idempotency, serializable invoice reservation and provider-attempt tracking. Pending/provider-processing records are not counted as collected funds.
+Fee payment initiation now creates explicit per-invoice `PaymentIntent` reservations with a 15-minute expiry. Active `PENDING`/`PROCESSING` intents reduce available invoice balance; expired intents are excluded from new availability. The existing idempotency ledger remains the request-replay authority.
+
+`PaymentAllocation` is created only after a verified provider-success webhook and must reconcile exactly to the PaymentIntent reservation total. Provider rejection/unknown/OTP paths update PaymentIntent state without treating the reserved amount as collected funds.
 
 Wallet top-ups create the signed CREDIT ledger effect only after verified provider success. Office withdrawals create signed DEBIT effects together with durable withdrawal evidence; posted corrections use compensating reversal entries.
 
-A dedicated PaymentIntent reservation entity remains a production-hardening item. The current fee flow uses the Payment row plus pending allocations as its reservation representation and should not be treated as the final production payment-intent model.
+Automated expiry reconciliation and real-money Moolre verification remain production gates.
 
 ## Grading policy API
 
