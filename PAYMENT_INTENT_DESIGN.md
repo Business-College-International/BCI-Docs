@@ -1,8 +1,10 @@
 # BCI Payment Intent Design Gate
 
-## Why payment intents are not live yet
+Implementation status: **PaymentIntent reservation schema and fee-flow integration are implemented and validated. Live-money provider verification and automated expiry reconciliation remain gated.**
 
-The current `Payment` model represents a financial payment after it exists, while `PaymentAllocation` applies a successful payment to an invoice. The current model does not identify the invoice being targeted while provider payment is pending.
+## Current implementation boundary
+
+The backend now has a dedicated `PaymentIntent` reservation record. `Payment` remains the provider-facing payment transaction record, while `PaymentAllocation` is created only after a verified successful fee payment.
 
 That distinction matters because multiple concurrent pending requests could otherwise attempt to consume the same outstanding invoice balance.
 
@@ -14,12 +16,12 @@ Before payment creation is enabled, the database must support these invariants a
 2. The intended amount is fixed when the intent is created; provider callbacks cannot change it.
 3. Invoice outstanding amount is derived from immutable invoice lines minus valid successful payment allocations.
 4. Outstanding availability also subtracts non-expired `PENDING` / `PROCESSING` reservations against that same invoice.
-5. An idempotency key is unique for `(initiating user, operation)` and returns the original payment intent on a retry with the same request hash.
+5. The existing idempotency ledger is authoritative for `(initiating user, operation)` request replay; each created intent carries the same request idempotency key.
 6. A reused idempotency key with a different request hash is rejected as an idempotency conflict.
-7. Provider attempts and provider webhook events reference the same payment intent/payment record without creating a second financial record.
+7. Provider attempts and webhook events reconcile through the associated Payment record and its PaymentIntent reservations without creating duplicate financial facts.
 8. Only a verified provider success transition can create the final `PaymentAllocation` and `Receipt`.
 9. Duplicate provider callbacks are harmless, produce no duplicate allocation/receipt, and remain auditable.
-10. Expired pending reservations become unavailable for balance calculations and can be reconciled/marked expired without changing historical successful payments.
+10. Expired `PENDING`/`PROCESSING` intents are excluded from new-availability calculations; an automated reconciliation worker to mark them `EXPIRED` is still a later hardening task.
 
 ## Planned model shape
 
@@ -49,7 +51,7 @@ Payment (financial fact)
       └── Receipt
 ```
 
-The preferred implementation is a dedicated `PaymentIntent`/reservation record rather than overloading the existing `Payment` row with target-invoice state. A payment intent is an operational reservation; a successful `Payment` is the durable financial fact.
+The implemented design uses a dedicated `PaymentIntent` reservation record. Each fee invoice reservation is explicit and expiring; the final financial allocation is created only after verified provider success.
 
 The intent should carry enough identity to safely retry and reconcile, including initiator, invoice target, currency, fixed amount, provider/client reference, idempotency key, created/expiry timestamps, and lifecycle status. The final `Payment` should reference the intent so audit and reconciliation can follow the entire journey.
 
@@ -98,9 +100,9 @@ Because the live Moolre API contract has not been verified in the current enviro
 
 ## Current API boundary
 
-The finance API currently supports fee schedule management, invoice issuance, and scoped invoice reading.
+The existing finance API now supports guarded fee-payment initiation and OTP continuation. PaymentIntent rows are created internally as the reservation identity; the public API continues to expose the existing payment initiation/OTP endpoints rather than a separate raw intent endpoint.
 
-It deliberately does **not** expose payment-intent creation, provider callbacks, refunds, wallet top-ups, or disbursements yet.
+Real-money provider operation remains disabled until the Moolre live API contract, credentials, callback verification and reconciliation behavior are independently confirmed.
 
 ## Migration rule
 
