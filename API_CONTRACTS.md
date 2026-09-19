@@ -121,3 +121,13 @@ Fee payment initiation currently uses idempotency, serializable invoice reservat
 Wallet top-ups create the signed CREDIT ledger effect only after verified provider success. Office withdrawals create signed DEBIT effects together with durable withdrawal evidence; posted corrections use compensating reversal entries.
 
 A dedicated PaymentIntent reservation entity remains a production-hardening item. The current fee flow uses the Payment row plus pending allocations as its reservation representation and should not be treated as the final production payment-intent model.
+
+## Grading policy API
+
+- GET /api/v1/grading-policies — read versioned grading policies; filtered by academic year, level and programme.
+- POST /api/v1/grading-policies — create a DRAFT policy with explicit academic-year/level scope and school-supplied grade bands.
+- PATCH /api/v1/grading-policies/:id — edit a DRAFT policy only.
+- POST /api/v1/grading-policies/:id/publish — publish an otherwise valid DRAFT transactionally; only one ACTIVE policy is permitted for an identical scope.
+- POST /api/v1/grading-policies/:id/retire — retire an ACTIVE policy.
+
+The report service resolves an ACTIVE programme-specific policy first and falls back to a generic policy for the same academic year/level. The returned report identifies the policy version used for grade resolution. No grade is assigned when the relevant policy is absent.
