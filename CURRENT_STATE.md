@@ -23,7 +23,7 @@ The academic-report endpoints are read-only and derive assessment percentages, s
 
 The current-term endpoint resolves the open term inside the current academic year on the server, so guardians do not need administrative term IDs.
 
-The system now resolves official grades from a versioned, configurable grading policy. Active policies are scoped by academic year/level with optional programme override, validated for complete 0–100 coverage, published transactionally, and recorded with their policy version in report output. Published report-card snapshot persistence remains a later gate.
+The system now resolves official grades from a versioned, configurable grading policy. Active policies are scoped by academic year/level with optional programme override, validated for complete 0–100 coverage, published transactionally, and recorded with their policy version in report output. Published report-card snapshot persistence is now implemented; report-card correction/history beyond void-and-replace remains a later hardening gate.
 
 Guardians have `assessments.read`, but report access still requires `canViewAcademic` on the specific guardian-student relationship. Teachers are scoped to the student's active class/term assignment.
 
@@ -114,7 +114,7 @@ The Prisma model uses a dedicated application tracking code rather than exposing
 ### Web portal
 `bci-web-portal` now has the staff sign-in surface, server-authoritative session verification, a staff workspace showing the authenticated employee's active duties/teaching assignments, authenticated admissions workspace, application list/review controls, public tracking-code lookup, and a server-driven admission placement workflow.
 
-The portal uses server-returned permission codes. The staff workspace only loads for accounts with `staff.read` and is sourced from `GET /api/v1/staff/me`. The portal also has a progression control and a grading-policy administration workspace for accounts with `grading.read`/`grading.manage`.
+The portal uses server-returned permission codes. The staff workspace only loads for accounts with `staff.read` and is sourced from `GET /api/v1/staff/me`. The portal also has progression, grading-policy administration, and report-card publication controls for authorized staff.
 
 ### Mobile
 `bci-mobile-app` has a Flutter/Riverpod shell, secure token storage, shared auth login/refresh/logout, session restoration through `/auth/me`, an authenticated guardian dashboard loading `/students/me/wards`, a read-only current-term academic-results page for wards whose relationship has `canViewAcademic=true`, a read-only fee/invoice review page for wards whose relationship has `canPayFees=true`, and a wallet page for wards whose relationship has `canManageWallet=true` that supports mobile-money top-up initiation, OTP continuation, and signed transaction display.
@@ -132,12 +132,12 @@ Backend CI validates Prisma, generates the client, compiles, and runs Jest. The 
 
 Organization-wide workflow scanning found no remaining `push:` trigger in the BCI repositories.
 
-The BCI repositories currently have active review work in backend wallet/grading and web grading/progression PRs; these should remain open until their current validation gates are green and the corresponding integration is deliberately merged.
+The wallet, grading-policy, progression, and report-card publication review slices have been validated and merged into their respective mainlines. Remaining work is tracked below.
 
 ## Open blockers before production
 
-1. Merge the validated wallet/grading backend changes only after the current schema, migration and PR checks remain green.
-2. Complete remaining object/scope authorization across finance, inventory, messaging, staff, payroll, wallet, and remaining academic workflows; teacher historical academic reads are now scoped to the requested term.
+1. Continue finance hardening with a dedicated PaymentIntent reservation entity and production provider verification.
+2. Complete remaining object/scope authorization and cross-channel parity across finance, inventory, messaging, staff, payroll, wallet, attendance, assessments and report-card history.
 3. Replace the bootstrap in-process rate limiter with distributed protection before running multiple API instances.
 4. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model; the current `Enrolment` uniqueness model has intentionally not been weakened.
 5. Finalize the dedicated payment-intent invoice-target/reservation schema; the current Payment + pending allocations mechanism remains a hardening boundary.
@@ -145,7 +145,7 @@ The BCI repositories currently have active review work in backend wallet/grading
 7. Complete successful payment allocation, receipts, refunds, immutable journal posting, and reconciliation before finance goes live.
 8. Complete wallet reconciliation/operational review and preserve the signed ledger/withdrawal evidence model.
 9. Expand attendance roster/teacher/mobile UX and reporting.
-10. Complete report-card publication and historical snapshot persistence using the applied grading-policy version.
+10. Complete report-card correction/history workflows and durable delivery/exports around the published snapshot.
 11. Establish timetable schema/versioning and conflict validation.
 12. Build payroll write/approval/disbursement workflows only after financial verification.
 13. Build inventory, messaging, notification, deployment, secrets, backups, restore drills, and production monitoring.
@@ -157,9 +157,9 @@ The BCI repositories currently have active review work in backend wallet/grading
 3. Build remaining staff web/mobile operational workflows.
 4. Finalize payment reservation schema and reconciliation design.
 5. Finance payment/receipt foundation after schema verification and provider-contract verification.
-6. Report-card publication and historical grading snapshots.
+6. Report-card correction/history and publishing operations.
 7. Payroll approval/disbursement.
-8. Production wallet reconciliation and remaining finance hardening.
+8. Dedicated payment-intent reservation and production finance hardening.
 9. Inventory.
 10. Communication/notifications.
 11. Reporting and production hardening.
