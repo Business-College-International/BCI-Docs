@@ -136,12 +136,10 @@ The wallet, grading-policy, progression, report-card publication, and PaymentInt
 
 ## Open blockers before production
 
-1. Verify the live Moolre API contract before enabling real-money provider operation; PaymentIntent reservations are now implemented and validated.
+1. Verify the live Moolre API contract before enabling real-money provider operation.
 2. Complete remaining object/scope authorization and cross-channel parity across finance, inventory, messaging, staff, payroll, wallet, attendance, assessments and report-card history.
 3. Replace the bootstrap in-process rate limiter with distributed protection before running multiple API instances.
 4. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model; the current `Enrolment` uniqueness model has intentionally not been weakened.
-5. Add automated reconciliation to mark expired PaymentIntent reservations as `EXPIRED` and clear operational stale state.
-6. Verify the live Moolre API contract before enabling real-money provider operation.
 7. Complete successful payment allocation, receipts, refunds, immutable journal posting, and reconciliation before finance goes live.
 8. Complete wallet reconciliation/operational review and preserve the signed ledger/withdrawal evidence model.
 9. Expand attendance roster/teacher/mobile UX and reporting.
@@ -152,11 +150,11 @@ The wallet, grading-policy, progression, report-card publication, and PaymentInt
 
 ## Current next execution order
 
-1. Complete wallet/grading backend migration review and merge after all code/database gates are green.
+1. Verify the live Moolre API contract and final finance reconciliation/journal requirements.
 2. Complete remaining object/scope authorization audit and web/mobile academic parity for attendance, assessments, academic reports, and grading.
 3. Build remaining staff web/mobile operational workflows.
-4. Complete PaymentIntent expiry reconciliation and live-provider verification design.
-5. Finance payment/receipt foundation after schema verification and provider-contract verification.
+4. Complete report-card correction/history and durable delivery/exports.
+5. Expand attendance roster/teacher/mobile UX and reporting.
 6. Report-card correction/history and publishing operations.
 7. Payroll approval/disbursement.
 8. Finance production hardening after provider verification, expiry reconciliation, receipts/refunds and journal/reconciliation completion.
