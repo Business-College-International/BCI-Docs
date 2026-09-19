@@ -1,6 +1,6 @@
 # BCI Grading Policy Design
 
-Implementation status: **backend policy lifecycle implemented and under migration/CI verification; report resolution is implemented; published report-card snapshot persistence remains a later gate.**
+Implementation status: **backend policy lifecycle and report-card publication are implemented; published snapshots record the exact grading-policy version and a deterministic snapshot hash.**
 
 ## Purpose
 
@@ -44,7 +44,7 @@ Publishing is transactional and auditable. Once a policy is ACTIVE for a scope, 
 
 There must be at most one ACTIVE policy for an identical academic-year/level/programme scope.
 
-A DRAFT may be edited before publication. The current API does not expose draft deletion. An ACTIVE policy may only be RETIRED by an authorized administrator. Retirement does not alter historical report cards.
+A DRAFT may be edited before publication. The current API does not expose draft deletion. An ACTIVE policy may only be RETIRED by an authorized administrator. Retirement does not alter published report-card snapshots.
 
 ## Report-card calculation
 
@@ -72,6 +72,6 @@ Policy creation, update, publish and retire operations require explicit grading/
 
 The backend now provides `GET /grading-policies`, `POST /grading-policies`, `PATCH /grading-policies/:id`, `POST /grading-policies/:id/publish`, and `POST /grading-policies/:id/retire`. Policy creation/update validates contiguous 0–100 coverage through the existing grading engine. Publication is serializable, advisory-lock protected, audited, and guarded by a database-level partial unique index for one ACTIVE policy per scope.
 
-`AcademicReportsService` resolves the ACTIVE exact programme policy first and falls back to a generic policy. Report output includes the applied policy version and resolved grade when a valid policy exists.
+`AcademicReportsService` resolves the ACTIVE exact programme policy first and falls back to a generic policy. Report output includes the applied policy version and resolved grade when a valid policy exists. Report-card publication snapshots persist that exact output, including the policy version and snapshot hash.
 
-The Prisma grading schema is introduced by `20260919070000_grading_policy_foundation`; the active-scope database guard is introduced by `20260919073000_grading_policy_active_scope_guard`. Both are subject to the repository's PostgreSQL and migration-review workflows.
+The Prisma grading schema is introduced by `20260919070000_grading_policy_foundation`; the active-scope database guard is introduced by `20260919073000_grading_policy_active_scope_guard`. The publication model and its migration are subject to the repository's PostgreSQL and migration-review workflows; the final publication PR was merged only after the backend CI test suite passed.
