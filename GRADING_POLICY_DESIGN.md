@@ -1,5 +1,7 @@
 # BCI Grading Policy Design
 
+Implementation status: **backend policy lifecycle implemented and under migration/CI verification; report resolution is implemented; published report-card snapshot persistence remains a later gate.**
+
 ## Purpose
 
 Official grades must be configurable school policy, not hard-coded application behavior. Assessment scores and derived percentages remain the source facts; grades are a versioned interpretation of those facts.
@@ -42,7 +44,7 @@ Publishing is transactional and auditable. Once a policy is ACTIVE for a scope, 
 
 There must be at most one ACTIVE policy for an identical academic-year/level/programme scope.
 
-A DRAFT may be edited or deleted before publication. An ACTIVE policy may only be RETIRED by an authorized administrator. Retirement does not alter historical report cards.
+A DRAFT may be edited before publication. The current API does not expose draft deletion. An ACTIVE policy may only be RETIRED by an authorized administrator. Retirement does not alter historical report cards.
 
 ## Report-card calculation
 
@@ -54,7 +56,7 @@ Report generation remains derived from assessment results. The calculation pipel
 4. map the percentage into exactly one grade band
 5. return grade code, descriptor, pass/fail and configured points where applicable
 
-If no ACTIVE policy exists, the report must expose `GRADING_POLICY_REQUIRED` and must not invent a grade.
+If no ACTIVE policy exists, the report returns an unassigned grade with an explicit policy-required reason and must not invent a grade.
 
 If the underlying assessment weighting is inconsistent, continue returning `MIXED_POLICY_REQUIRED` before grade resolution.
 
@@ -66,6 +68,10 @@ Report views should identify the grading-policy version used. Published report-c
 
 Policy creation, update, publish and retire operations require explicit grading/report permissions and create audit records. Teachers can read the applicable policy but cannot publish or change it unless separately authorized.
 
-## Migration gate
+## Implemented backend contract
 
-Do not modify `prisma/schema.prisma` for grading until the first migration has been verified against PostgreSQL. The eventual schema change must be introduced as one deliberate revision and included in the migration review.
+The backend now provides `GET /grading-policies`, `POST /grading-policies`, `PATCH /grading-policies/:id`, `POST /grading-policies/:id/publish`, and `POST /grading-policies/:id/retire`. Policy creation/update validates contiguous 0–100 coverage through the existing grading engine. Publication is serializable, advisory-lock protected, audited, and guarded by a database-level partial unique index for one ACTIVE policy per scope.
+
+`AcademicReportsService` resolves the ACTIVE exact programme policy first and falls back to a generic policy. Report output includes the applied policy version and resolved grade when a valid policy exists.
+
+The Prisma grading schema is introduced by `20260919070000_grading_policy_foundation`; the active-scope database guard is introduced by `20260919073000_grading_policy_active_scope_guard`. Both are subject to the repository's PostgreSQL and migration-review workflows.
