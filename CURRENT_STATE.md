@@ -12,18 +12,19 @@ Guardians receive the `attendance.read` role capability, but `canViewAcademic` o
 Assessments are implemented without database changes:
 
 - `POST /api/v1/assessments`
+- `GET /api/v1/assessments/assigned?classId=...&termId=...&subjectId=...`
 - `POST /api/v1/assessments/:assessmentId/results`
 - `GET /api/v1/assessments/students/:studentId?termId=...`
 - `GET /api/v1/academic-reports/students/:studentId/current`
 - `GET /api/v1/academic-reports/students/:studentId/terms/:termId`
 
-Assessment creation requires teacher assignment to the subject/term and is limited to open terms. Result entry verifies assignment scope, active student enrolment in a class assigned for that subject/term, duplicate-student rejection, and score <= maxScore. Result updates are upserts and audited.
+Assessment creation requires teacher assignment to the subject/term and is limited to open terms. Result entry verifies assignment scope, active student enrolment in a class assigned for that subject/term, duplicate-student rejection, and score <= maxScore. Existing assessments can be loaded with their class-scoped results for correction workflows. Published report-card results require a pending correction request before they can change; controlled corrections remain possible after term closure, but only for students covered by the correction workflow. Result updates are upserts and audited.
 
 The academic-report endpoints are read-only and derive assessment percentages, subject averages, and an overall percentage when the term uses a consistent weighting policy. Fully weighted terms use weighted contribution; fully unweighted terms use an average percentage. Mixed weighted/unweighted results deliberately return `MIXED_POLICY_REQUIRED` rather than silently choosing an interpretation.
 
 The current-term endpoint resolves the open term inside the current academic year on the server, so guardians do not need administrative term IDs.
 
-The system now resolves official grades from a versioned, configurable grading policy. Active policies are scoped by academic year/level with optional programme override, validated for complete 0–100 coverage, published transactionally, and recorded with their policy version in report output. Published report-card snapshot persistence is now implemented; report-card correction/history beyond void-and-replace remains a later hardening gate.
+The system now resolves official grades from a versioned, configurable grading policy. Active policies are scoped by academic year/level with optional programme override, validated for complete 0–100 coverage, published transactionally, and recorded with their policy version in report output. Published report-card snapshots are immutable. The correction workflow locks the current publication, verifies grading-policy continuity, recalculates from the authoritative report inside the approval transaction, rejects no-op corrections, and publishes the fresh replacement as the next immutable version.
 
 Guardians have `assessments.read`, but report access still requires `canViewAcademic` on the specific guardian-student relationship. Teachers are scoped to the student's active class/term assignment.
 
@@ -39,9 +40,9 @@ This workflow is a verification mechanism, not a production migration claim. The
 
 A deterministic Prisma seed establishes role-permission defaults without fake school users or records.
 
-Every HTTP response receives a server-generated `X-Request-Id` correlation identifier.
+Every HTTP response receives a server-generated `X-Request-Id` correlation identifier, and the active request ID is injected into `AuditLog.create` writes.
 
-Startup validates `DATABASE_URL`, `JWT_ACCESS_SECRET`, `NODE_ENV`, `PORT`, and production `CORS_ORIGINS` before listening. HTTP requests emit structured timing/status logs. A dependency-free in-process limiter protects authentication and public application endpoints; distributed rate limiting remains a production gate before horizontal scaling.
+Startup validates `DATABASE_URL`, `JWT_ACCESS_SECRET`, `NODE_ENV`, `PORT`, production `CORS_ORIGINS`, and the trusted reverse-proxy hop setting before listening. HTTP requests emit structured timing/status logs. Authentication and public-application rate limits use a PostgreSQL-backed atomic bucket store; Express trusts proxy hops only when explicitly configured, and the application no longer trusts raw caller-supplied `X-Forwarded-For` values.
 
 The Prisma schema baseline was restored from the last complete Git blob after a reviewed schema-edit attempt was found to have truncated the file. Finance, payment-provider, wallet, inventory, notification, audit, attendance, assessment, staff, and payroll models are confirmed present again. No migration was generated from the truncated version.
 
@@ -117,10 +118,10 @@ The Prisma model uses a dedicated application tracking code rather than exposing
 The portal uses server-returned permission codes. The staff workspace only loads for accounts with `staff.read` and is sourced from `GET /api/v1/staff/me`. The portal also has progression, grading-policy administration, and report-card publication controls for authorized staff.
 
 ### Mobile
-`bci-mobile-app` has a Flutter/Riverpod shell, secure token storage, shared auth login/refresh/logout, session restoration through `/auth/me`, an authenticated guardian dashboard loading `/students/me/wards`, a read-only current-term academic-results page for wards whose relationship has `canViewAcademic=true`, a read-only fee/invoice review page for wards whose relationship has `canPayFees=true`, and a wallet page for wards whose relationship has `canManageWallet=true` that supports mobile-money top-up initiation, OTP continuation, and signed transaction display.
+`bci-mobile-app` has a Flutter/Riverpod shell, secure token storage, shared auth login/refresh/logout, session restoration through `/auth/me`, an authenticated guardian dashboard loading `/students/me/wards`, a read-only current-term academic-results page for wards whose relationship has `canViewAcademic=true`, a read-only fee/invoice review page for wards whose relationship has `canPayFees=true`, and a wallet page for wards whose relationship has `canManageWallet=true` that supports mobile-money top-up initiation, OTP continuation, and signed transaction display. Staff users also have teacher assessment entry plus a dedicated existing-assessment correction workspace with explicit report-card correction requests.
 
 ### Public website
-`bci-website` has a public BCI shell and admissions form concept wired to the shared backend application endpoint and authoritative tracking-code response.
+`bci-website` has a public BCI shell and admissions form wired to the shared backend application endpoint and authoritative tracking-code response. Production builds now require an explicit `VITE_API_BASE_URL` rather than silently calling localhost.
 
 ## Engineering hygiene
 
@@ -132,17 +133,17 @@ Backend CI validates Prisma, generates the client, compiles, and runs Jest. The 
 
 Organization-wide workflow scanning found no remaining `push:` trigger in the BCI repositories.
 
-The wallet, grading-policy, progression, report-card publication, PaymentIntent reservation, expiry reconciliation, and distributed rate-limiting slices have been validated and merged into their respective mainlines. Remaining work is tracked below.
+The wallet, grading-policy, progression, report-card publication/correction, PaymentIntent reservation, expiry reconciliation, request-correlation audit plumbing, refresh-token rotation hardening, proxy-safe rate limiting, and primary-guardian database invariant have been validated and merged into their respective mainlines. Remaining work is tracked below.
 
 ## Open blockers before production
 
 1. Verify the live Moolre API contract before enabling real-money provider operation.
 2. Complete remaining object/scope authorization and cross-channel parity across finance, inventory, messaging, staff, payroll, wallet, attendance, assessments and report-card history.
 3. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model; the current `Enrolment` uniqueness model has intentionally not been weakened.
-4. Complete successful payment allocation, receipts, refunds, immutable journal posting, and reconciliation before finance goes live.
+4. Complete final finance reconciliation/operational review, including provider-vs-internal collections, refunds/disbursements, wallet movements, stationery transactions, and daily exception handling before finance goes live.
 5. Complete wallet reconciliation/operational review and preserve the signed ledger/withdrawal evidence model.
 9. Expand attendance roster/teacher/mobile UX and reporting.
-10. Complete report-card correction/history workflows and durable delivery/exports around the published snapshot.
+10. Complete durable report-card delivery/exports and any remaining audit-history presentation around the published snapshot.
 11. Establish timetable schema/versioning and conflict validation.
 12. Build payroll write/approval/disbursement workflows only after financial verification.
 13. Build inventory, messaging, notification, deployment, secrets, backups, restore drills, and production monitoring.
