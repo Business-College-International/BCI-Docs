@@ -30,6 +30,10 @@ Guardians have `assessments.read`, but report access still requires `canViewAcad
 
 The Flutter guardian app displays current-term academic results using the same server-derived report contract and does not calculate or invent grades locally.
 
+### Health and readiness
+
+The backend exposes `/api/v1/health/live` for DB-independent liveness and `/api/v1/health/ready` for database readiness. Health checks are intentionally excluded from the normal rate-limit storage dependency so an unhealthy database does not turn liveness probing into a second failure mode.
+
 ### Database verification gate
 
 Dedicated database-contract, PostgreSQL schema-contract, and Prisma migration-review workflows validate the complete schema and migration history against clean PostgreSQL and review migration deltas.
@@ -42,7 +46,7 @@ A deterministic Prisma seed establishes role-permission defaults without fake sc
 
 Every HTTP response receives a server-generated `X-Request-Id` correlation identifier, and the active request ID is injected into `AuditLog.create` writes.
 
-Startup validates `DATABASE_URL`, `JWT_ACCESS_SECRET`, `NODE_ENV`, `PORT`, production `CORS_ORIGINS`, and the trusted reverse-proxy hop setting before listening. HTTP requests emit structured timing/status logs. Authentication and public-application rate limits use a PostgreSQL-backed atomic bucket store; Express trusts proxy hops only when explicitly configured, and the application no longer trusts raw caller-supplied `X-Forwarded-For` values.
+Startup validates `DATABASE_URL`, `JWT_ACCESS_SECRET`, `NODE_ENV`, `PORT`, production `CORS_ORIGINS`, and the trusted reverse-proxy hop setting before listening. HTTP requests emit structured timing/status logs. Authentication and public-application rate limits use a PostgreSQL-backed atomic bucket store shared across application instances; Express trusts proxy hops only when explicitly configured, and the application no longer trusts raw caller-supplied `X-Forwarded-For` values. Liveness is DB-independent and readiness verifies PostgreSQL before the service is considered ready.
 
 The Prisma schema baseline was restored from the last complete Git blob after a reviewed schema-edit attempt was found to have truncated the file. Finance, payment-provider, wallet, inventory, notification, audit, attendance, assessment, staff, and payroll models are confirmed present again. No migration was generated from the truncated version.
 
