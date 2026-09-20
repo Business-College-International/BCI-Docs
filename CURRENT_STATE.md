@@ -144,7 +144,7 @@ The wallet, grading-policy, progression, report-card publication/correction, Pay
 1. Verify the live Moolre API contract before enabling real-money provider operation.
 2. Complete remaining object/scope authorization and cross-channel parity across finance, inventory, messaging, staff, payroll, wallet, attendance, assessments and report-card history.
 3. Complete remaining guardian/student lifecycle mutations, including verified login-identifier changes and transfer/progression workflows. Intra-term transfer history still needs a dedicated relational history model; the current `Enrolment` uniqueness model has intentionally not been weakened.
-4. Complete final finance reconciliation/operational review, including provider-vs-internal collections, refunds/disbursements, wallet movements, stationery transactions, and daily exception handling before finance goes live.
+4. Complete final finance operational review, including provider-vs-internal collections, payroll/disbursement accounting policy, daily exception handling, and live-provider verification before finance goes live.
 5. Complete wallet reconciliation/operational review and preserve the signed ledger/withdrawal evidence model.
 9. Expand attendance roster/teacher/mobile UX and reporting.
 10. Complete durable report-card delivery/exports and any remaining audit-history presentation around the published snapshot.
@@ -154,7 +154,7 @@ The wallet, grading-policy, progression, report-card publication/correction, Pay
 
 ## Current next execution order
 
-1. Verify the live Moolre API contract and final finance reconciliation/journal requirements.
+1. Verify the live Moolre API contract and complete final finance operational reconciliation, including payroll/disbursement accounting policy.
 2. Complete remaining object/scope authorization audit and web/mobile academic parity for attendance, assessments, academic reports, and grading.
 3. Build remaining staff web/mobile operational workflows.
 4. Complete report-card correction/history and durable delivery/exports.
