@@ -24,7 +24,7 @@ Student pocket-money is a distinct liability/ledger from school fees. A wallet t
 
 ## 6. Idempotency
 
-Every externally initiated or retryable money mutation accepts an idempotency key. Repeating the same logical request must return the existing outcome rather than create a second charge, wallet top-up, refund or payroll payment.
+Every externally initiated or retryable money mutation accepts an idempotency key. Repeating the same logical request must return the existing outcome rather than create a second charge, wallet top-up, refund request, wallet withdrawal/reversal, or payroll payment. Refund request creation uses the same replay authority as payment and wallet mutations.
 
 ## 7. Provider ambiguity
 
@@ -36,7 +36,7 @@ Provider callbacks are deduplicated by provider event/reference and processed tr
 
 ## 9. No destructive edits
 
-Posted financial records are immutable. Corrections use reversal/adjustment records referencing the original transaction. Amounts and references required for audit are never silently overwritten.
+Posted financial records are immutable. Corrections use reversal/adjustment records referencing the original transaction. Wallet withdrawals and reversals create explicit signed ledger effects and corresponding balanced double-entry journal transactions. Amounts and references required for audit are never silently overwritten.
 
 ## 10. Receipts
 
@@ -64,7 +64,7 @@ Stationery order totals are calculated server-side from authoritative product pr
 
 ## 16. Daily reconciliation
 
-The finance area must support reconciliation views for:
+The finance area now includes an integrity report that checks payment/refund/wallet journal balance and missing postings in addition to allocation, receipt, wallet, invoice, and stationery consistency. The finance area must support reconciliation views for:
 - provider collections vs internal payment records;
 - provider disbursements vs payroll/refunds;
 - wallet top-ups/withdrawals;
