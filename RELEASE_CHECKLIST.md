@@ -7,8 +7,9 @@
 - [ ] Database migrations apply cleanly from an empty database.
 - [ ] No destructive migration without an explicit reviewed plan.
 - [ ] Environment/configuration validation fails safely on missing secrets.
-- [ ] Health/readiness checks include database and required worker/dependency status.
-- [ ] Background jobs are retryable and observable.
+- [x] HTTP liveness/readiness endpoints exist; readiness verifies PostgreSQL and returns 503 when the database is unavailable.
+- [ ] Readiness additionally reports all required background workers/dependencies once those production workers exist.
+- [ ] Background jobs are implemented, retryable, and observable; the current backend has no scheduler/worker runtime yet.
 - [ ] Provider webhooks are authenticated and idempotent.
 
 ## Authorization
@@ -39,6 +40,9 @@
 - [ ] Public website does not expose private records.
 
 ## Operations
+
+### Current automated operational baseline
+The backend exposes `/api/v1/health` and `/api/v1/health/live` for liveness and `/api/v1/health/ready` for database-backed readiness. Health probes bypass the database-backed request limiter so outage detection remains usable when PostgreSQL is unavailable.
 - [ ] Backups verified.
 - [ ] Restore drill completed.
 - [ ] Error monitoring active.
