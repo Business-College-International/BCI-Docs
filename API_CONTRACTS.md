@@ -21,6 +21,13 @@ Expiry reconciliation is self-healing during new fee-payment reservation attempt
 - POST /api/v1/student-records/students/:studentId/documents — staff document creation with `students.manage`.
 - DELETE /api/v1/student-records/documents/:documentId — staff document removal with `students.manage`.
 
+## Finance refund API
+
+- POST /api/v1/finance/refunds — create a pending refund request. Requires `Idempotency-Key`; reusing the same key with the same request replays the original result, while different parameters are rejected.
+- POST /api/v1/finance/refunds/:refundId/approve — approve a pending refund with separation from the requester.
+- POST /api/v1/finance/refunds/:refundId/execute — reserve and execute the approved provider refund.
+- POST /api/v1/finance/refunds/:refundId/reconcile — reconcile a processing refund from authoritative provider status.
+
 ## Assessment and report-card API
 
 - POST /api/v1/assessments — create an assessment for an assigned subject/term while the term is open.
